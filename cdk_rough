@@ -1,0 +1,47 @@
+trigger:
+- main
+
+parameters:
+- name: environment
+  displayName: Environment
+  type: string
+  values:
+  - dev
+  - test
+  - prod
+
+stages:
+- stage: ValidateParameter
+  jobs:
+  - job: CheckEnvironment
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+    - script: |
+        if [[ "${{ parameters.environment }}" =~ ^(dev|test|prod)$ ]]; then
+          echo "Valid environment parameter supplied: ${{ parameters.environment }}"
+        else
+          echo "##vso[task.logissue type=error]Invalid environment parameter: ${{ parameters.environment }}"
+          echo "##vso[task.complete result=Failed;]"
+        fi
+      displayName: 'Validate Environment Parameter'
+
+- stage: Deploy
+  dependsOn: ValidateParameter
+  condition: |
+    and(
+      succeeded(),
+      in('${{ parameters.environment }}', 'dev', 'test', 'prod')
+    )
+  jobs:
+  - deployment: DeployToEnvironment
+    pool:
+      vmImage: 'ubuntu-latest'
+    environment: ${{ parameters.environment }}
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - script: echo Deploying to ${{ parameters.environment }}
+            displayName: 'Deploy to Environment'
+      =======
