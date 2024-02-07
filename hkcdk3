@@ -94,3 +94,19 @@ steps:
     ArtifactName: 'myapp_$(Build.BuildNumber)'
     publishLocation: 'Container'
 ==
+variables:
+  majorVersion: '1'
+  minorVersion: '0'
+  patchVersion: $[counter(variables['majorVersion.minorVersion'], 1)]
+  versionNumber: $(majorVersion).$(minorVersion).$(patchVersion)
+==
+steps:
+- script: echo Building version $(versionNumber)
+  displayName: 'Build application'
+
+- task: PublishBuildArtifacts@1
+  inputs:
+    PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+    ArtifactName: 'myApp_$(versionNumber)'
+    publishLocation: 'Container'
+===
