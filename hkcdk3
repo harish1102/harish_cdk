@@ -1,0 +1,96 @@
+trigger:
+- main
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+stages:
+- stage: Build
+  displayName: Build stage
+  jobs:
+  - job: BuildJob
+    displayName: Build
+    steps:
+    - task: UsePythonVersion@0
+      inputs:
+        versionSpec: '3.x'
+        addToPath: true
+    - script: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install aws-cdk.core
+      displayName: 'Install dependencies'
+
+- stage: Deploy
+  displayName: Deploy stage
+  jobs:
+  - job: DeployJob
+    displayName: Deploy
+    steps:
+    - task: AmazonWebServices.aws-vsts-tools.AWSShellScript@1
+      inputs:
+        awsCredentials: 'YourServiceConnectionName'
+        regionName: 'YourAWSRegion'
+        scriptType: 'inline'
+        inlineScript: |
+          cdk deploy --require-approval never
+      displayName: 'Deploy CDK App'
+=======
+trigger:
+  - main
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+- template: variables.yml  # Importing variable template
+- group: my-variable-group  # Linking to the Azure Variable Group
+
+steps:
+- script: echo Deploying to $(environment) in $(awsRegion)
+  displayName: 'Display Environment'
+
+- task: AWSCLI@1
+  inputs:
+    awsCredentials: 'myAWSConnection'  # Use the service connection name you created
+    regionName: $(awsRegion)
+    scriptType: 'bash'
+    script: |
+      # Add commands to build and deploy your AWS CDK project
+      pip install -r requirements.txt
+      cdk deploy --all
+  displayName: 'Deploy AWS CDK Project'
+====
+name: $(Build.DefinitionName)_$(Year:yyyy).$(Month).$(DayOfMonth)$(Rev:.r) # Custom build number format
+
+trigger:
+- main
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+steps:
+- script: echo Hello, world!
+  displayName: 'Run a one-line script'
+
+- script: echo $(Build.BuildNumber)
+  displayName: 'Echo Build Number'
+
+==
+variables:
+  majorVersion: '1'
+  minorVersion: '0'
+  patchVersion: '0'
+
+steps:
+- script: |
+    echo "##vso[build.updatebuildnumber]$(majorVersion).$(minorVersion).$(patchVersion).$(Build.BuildId)"
+  displayName: 'Set Build Number'
+==
+steps:
+- task: PublishBuildArtifacts@1
+  inputs:
+    PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+    ArtifactName: 'myapp_$(Build.BuildNumber)'
+    publishLocation: 'Container'
+==
