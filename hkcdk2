@@ -1,0 +1,33 @@
+trigger:
+- main
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+steps:
+- task: UsePythonVersion@0
+  inputs:
+    versionSpec: '3.x'
+    addToPath: true
+
+- script: |
+    python -m venv .venv
+    source .venv/bin/activate
+    python -m pip install --upgrade pip
+    pip install -r requirements.txt
+  displayName: 'Install dependencies'
+
+- script: |
+    source .venv/bin/activate
+    cdk synth
+  displayName: 'Synthesize the CDK app'
+
+- script: |
+    source .venv/bin/activate
+    cdk deploy --require-approval never
+  env:
+    AWS_ACCESS_KEY_ID: $(AWSAccessKeyId)
+    AWS_SECRET_ACCESS_KEY: $(AWSSecretAccessKey)
+    AWS_DEFAULT_REGION: 'us-east-1' # or your AWS region
+  displayName: 'Deploy CDK app to AWS'
+
