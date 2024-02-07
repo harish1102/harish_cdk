@@ -1,0 +1,50 @@
+trigger:
+- main
+
+variables:
+- template: variables.yml  # Variable template with AWS and project-specific settings
+
+stages:
+- stage: Build
+  displayName: Build stage
+  jobs:
+  - job: BuildJob
+    displayName: Build job
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+    - checkout: self
+    - script: |
+        python -m venv .venv
+        source .venv/bin/activate
+        pip install -r requirements.txt
+      displayName: 'Install dependencies'
+
+    - script: |
+        source .venv/bin/activate
+        cdk synth
+      displayName: 'Synthesize CloudFormation template'
+
+- stage: Deploy
+  dependsOn: Build
+  condition: succeeded()
+  variables:
+    awsRegion: $(awsRegion)  # Referencing variable from template
+    awsServiceConnection: $(awsServiceConnection)  # Azure DevOps service connection to AWS
+  jobs:
+  - deployment: DeployJob
+    displayName: Deploy job
+    environment: production
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - checkout: self
+          - script: |
+              source .venv/bin/activate
+              cdk deploy --require-approval never
+            displayName: 'Deploy to AWS'
+            env:
+              AWS_DEFAULT_REGION: $(awsRegion)
+              AWS_ACCESS_KEY_ID: $(awsAccessKeyId)
+              AWS_SECRET_ACCESS_KEY: $(awsSecretAccessKey)
