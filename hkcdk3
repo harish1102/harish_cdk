@@ -110,3 +110,29 @@ steps:
     ArtifactName: 'myApp_$(versionNumber)'
     publishLocation: 'Container'
 ===
+stages:
+- stage: Build
+  jobs:
+  - job: BuildJob
+    steps:
+      # Build steps here
+
+- stage: DeployToTest
+  dependsOn: Build
+  condition: succeeded()
+  jobs:
+  - deployment: DeployToTestJob
+    environment: 'Test'
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - script: echo Deploying version $(versionNumber) to Test
+
+- stage: DeployToProd
+  dependsOn: DeployToTest
+  condition: succeeded()
+  jobs:
+  - deployment: DeployToProdJob
+====
+
