@@ -19,3 +19,34 @@ stages:
   - job: DeployJob
     steps:
     - script: echo Deploying...
+===
+trigger:
+  - main
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+- template: variables.yml  # Importing variable template
+- group: my-variable-group  # Linking to the Azure Variable Group
+
+steps:
+- script: echo Deploying to $(environment) in $(awsRegion)
+  displayName: 'Display Environment'
+
+- task: AWSCLI@1
+  inputs:
+    awsCredentials: 'myAWSConnection'  # Use the service connection name you created
+    regionName: $(awsRegion)
+    scriptType: 'bash'
+    script: |
+      # Add commands to build and deploy your AWS CDK project
+      pip install -r requirements.txt
+      cdk deploy --all
+  displayName: 'Deploy AWS CDK Project'
+--
+#template
+variables.yml
+variables:
+  -name: awsregion
+   value: 'us-east-1'
