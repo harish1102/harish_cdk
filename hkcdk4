@@ -48,3 +48,11 @@ stages:
               AWS_DEFAULT_REGION: $(awsRegion)
               AWS_ACCESS_KEY_ID: $(awsAccessKeyId)
               AWS_SECRET_ACCESS_KEY: $(awsSecretAccessKey)
+---
+#body of variables.yml
+variables:
+  awsRegion: 'us-west-2'
+  awsServiceConnection: 'your-aws-service-connection-name'
+  awsAccessKeyId: 'your-access-key-id'
+  awsSecretAccessKey: 'your-secret-access-key'
+
