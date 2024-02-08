@@ -45,3 +45,26 @@ stages:
           - script: echo Deploying to ${{ parameters.environment }}
             displayName: 'Deploy to Environment'
       =======
+trigger: none
+
+parameters:
+- name: sourceBranch
+  displayName: 'Source Branch'
+  type: string
+  default: 'main'
+  values:
+  - main
+  - feature
+  - release
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+jobs:
+- job: Build
+  steps:
+  - checkout: git://YourProjectName/YourRepositoryName@${{ parameters.sourceBranch }}
+    displayName: 'Checkout Repository'
+
+  - script: echo Build your project here
+    displayName: 'Build Step'
