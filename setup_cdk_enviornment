@@ -1,0 +1,84 @@
+
+# File: aws-cdk-setup-template.yml
+parameters:
+- name: pythonVersion
+  default: '3.8'
+- name: nodeVersion
+  default: '14.x'
+
+jobs:
+- job: SetupAWSCDK
+  displayName: 'Setup AWS CDK Environment'
+  pool:
+    vmImage: 'ubuntu-latest'
+  steps:
+  - script: |
+      sudo apt-get update
+      sudo apt-get install -y python$({{ parameters.pythonVersion }}) python-pip
+      sudo apt-get install -y nodejs npm
+      sudo npm install -g n
+      sudo n ${{ parameters.nodeVersion }}
+      node -v
+      npm -v
+      sudo npm install -g aws-cdk
+      cdk --version
+    displayName: 'Install Python, Node.js, npm, and AWS CDK CLI'
+
+  - script: |
+      python -m pip install --upgrade pip
+      python -m pip install aws-cdk-lib
+    displayName: 'Install aws-cdk-lib'
+----
+trigger:
+- main
+
+stages:
+- stage: Setup
+  jobs:
+  - template: aws-cdk-setup-template.yml # Path to your template file
+    parameters:
+      pythonVersion: '3.8'
+      nodeVersion: '14.x'
+------
+# File: validate-installations-template.yml
+
+jobs:
+- job: ValidateInstallations
+  displayName: 'Validate Installations'
+  pool:
+    vmImage: 'ubuntu-latest'
+  steps:
+  - script: |
+      echo "Validating Python..."
+      python --version
+    displayName: 'Validate Python'
+    failOnStderr: true
+
+  - script: |
+      echo "Validating pip..."
+      pip --version
+    displayName: 'Validate pip'
+    failOnStderr: true
+
+  - script: |
+      echo "Validating Node.js..."
+      node --version
+    displayName: 'Validate Node.js'
+    failOnStderr: true
+
+  - script: |
+      echo "Validating npm..."
+      npm --version
+    displayName: 'Validate npm'
+    failOnStderr: true
+
+  - script: |
+      echo "Validating AWS CDK..."
+      cdk --version
+    displayName: 'Validate AWS CDK'
+    failOnStderr: true
+
+  - script: |
+      echo "All required tools are installed."
+    displayName: 'Validation Success'
+-----------------
