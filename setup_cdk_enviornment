@@ -82,3 +82,63 @@ jobs:
       echo "All required tools are installed."
     displayName: 'Validation Success'
 -----------------
+# File: setup-aws-cdk.yml
+parameters:
+- name: pythonVersion
+  default: '3.8'
+- name: nodeVersion
+  default: '14.x'
+
+jobs:
+- job: SetupAWSCDK
+  displayName: 'Setup AWS CDK Environment'
+  pool:
+    vmImage: 'ubuntu-latest'
+  steps:
+  - script: |
+      sudo apt-get update && sudo apt-get install -y unzip
+      curl -sL https://deb.nodesource.com/setup_${{ parameters.nodeVersion }} | sudo -E bash -
+      sudo apt-get install -y nodejs
+      node --version
+      npm --version
+    displayName: 'Install Node.js and npm'
+
+  - script: |
+      sudo apt-get update && sudo apt-get install -y python${{ parameters.pythonVersion }} python3-pip
+      python3 --version
+      pip3 --version
+    displayName: 'Install Python and pip'
+
+  - script: |
+      npm install -g aws-cdk
+      cdk --version
+    displayName: 'Install AWS CDK CLI'
+
+  - script: |
+      pip3 install awscli aws-cdk-lib
+      aws --version
+    displayName: 'Install AWS CLI and aws-cdk-lib'
+
+--------
+trigger:
+- main
+
+stages:
+- stage: SetupEnvironment
+  jobs:
+  - template: setup-aws-cdk.yml  # Reference the template
+    parameters:
+      pythonVersion: '3.8'
+      nodeVersion: '14.x'
+
+- stage: Build
+  jobs:
+  - job: BuildJob
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+    - checkout: self
+    - script: echo Build stage
+      displayName: 'Run build'
+-------
+
