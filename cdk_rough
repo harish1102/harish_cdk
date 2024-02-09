@@ -68,3 +68,20 @@ jobs:
 
   - script: echo Build your project here
     displayName: 'Build Step'
+---
+SELECT n.nspname AS schema_name,
+       c.relname AS object_name,
+       CASE c.relkind
+           WHEN 'r' THEN 'table'
+           WHEN 'i' THEN 'index'
+           WHEN 'm' THEN 'materialized view'
+           ELSE c.relkind::text
+       END AS object_type,
+       t.spcname AS tablespace_name
+FROM pg_class c
+JOIN pg_namespace n ON n.oid = c.relnamespace
+LEFT JOIN pg_tablespace t ON t.oid = c.reltablespace
+WHERE t.spcname = 'your_tablespace_name' -- Replace with your tablespace name
+   OR (c.reltablespace = 0 AND 'your_tablespace_name' = 'pg_default')
+ORDER BY schema_name, object_name;
+---
