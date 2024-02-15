@@ -1,0 +1,29 @@
+# aws-credentials-template.yml
+
+parameters:
+- name: variableGroupName
+  type: string
+  default: 'aws-credentials'
+
+steps:
+- bash: |
+    echo "Access Key ID: ${{ variables.accessKeyId }}"
+    echo "Secret Access Key: ${{ variables.secretAccessKey }}"
+  env:
+    accessKeyId: $(accessKeyId)
+    secretAccessKey: $(secretAccessKey)
+
+  ----
+  trigger:
+- main
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+- group: aws-credentials # Reference your variable group here
+
+steps:
+- template: aws-credentials-template.yml # Reference your template file
+  parameters:
+    variableGroupName: 'aws-credentials'
