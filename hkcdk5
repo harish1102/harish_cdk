@@ -18,3 +18,34 @@ steps:
     AWS_ACCESS_KEY_ID: $(AWSAccessKeyID)
     AWS_SECRET_ACCESS_KEY: $(AWSSecretAccessKey)
 -------------
+trigger:
+- main
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+steps:
+- script: |
+    echo "Assuming AWS Role"
+    aws sts assume-role --role-arn "arn:aws:iam::123456789012:role/YourRoleName" --role-session-name AzureDevOpsSession > assume-role-output.json
+    export AWS_ACCESS_KEY_ID=$(cat assume-role-output.json | jq -r .Credentials.AccessKeyId)
+    export AWS_SECRET_ACCESS_KEY=$(cat assume-role-output.json | jq -r .Credentials.SecretAccessKey)
+    export AWS_SESSION_TOKEN=$(cat assume-role-output.json | jq -r .Credentials.SessionToken)
+  displayName: 'Assume AWS Role'
+  env:
+    AWS_DEFAULT_REGION: 'us-east-1' # or your AWS region
+    # Use Azure DevOps secret variables for initial AWS credentials
+    AWS_ACCESS_KEY_ID: $(AwsAccessKeyId)
+    AWS_SECRET_ACCESS_KEY: $(AwsSecretAccessKey)
+
+- script: |
+    echo "Deploying with AWS CDK"
+    npx aws-cdk deploy --all
+  displayName: 'AWS CDK Deploy'
+  env:
+    AWS_ACCESS_KEY_ID: $(AWS_ACCESS_KEY_ID)
+    AWS_SECRET_ACCESS_KEY: $(AWS_SECRET_ACCESS_KEY)
+    AWS_SESSION_TOKEN: $(AWS_SESSION_TOKEN)
+    AWS_DEFAULT_REGION: 'us-east-1' # or your AWS region
+------------
+
