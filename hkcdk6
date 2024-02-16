@@ -1,3 +1,27 @@
+trigger:
+- main
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+steps:
+- script: |
+    echo "Assuming AWS role..."
+    ASSUME_ROLE_CREDENTIALS=$(aws sts assume-role --role-arn "arn:aws:iam::123456789012:role/YourRoleName" --role-session-name AzurePipelinesSession)
+    export AWS_ACCESS_KEY_ID=$(echo $ASSUME_ROLE_CREDENTIALS | jq -r '.Credentials.AccessKeyId')
+    export AWS_SECRET_ACCESS_KEY=$(echo $ASSUME_ROLE_CREDENTIALS | jq -r '.Credentials.SecretAccessKey')
+    export AWS_SESSION_TOKEN=$(echo $ASSUME_ROLE_CREDENTIALS | jq -r '.Credentials.SessionToken')
+    
+    echo "AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID"
+    echo "AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY"
+    echo "AWS_SESSION_TOKEN=$AWS_SESSION_TOKEN"
+    
+    # Use the credentials in subsequent commands as needed
+  displayName: 'Assume AWS Role'
+  env:
+    AWS_DEFAULT_REGION: 'us-east-1' # Specify your AWS region
+
+---
 # aws-credentials-template.yml
 
 parameters:
