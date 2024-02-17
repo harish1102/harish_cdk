@@ -48,4 +48,41 @@ steps:
     AWS_SESSION_TOKEN: $(AWS_SESSION_TOKEN)
     AWS_DEFAULT_REGION: 'us-east-1' # or your AWS region
 ------------
+trigger:
+- main
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+steps:
+- script: |
+    echo "Installing AWS CLI..."
+    curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+    unzip awscliv2.zip
+    sudo ./aws/install
+  displayName: 'Install AWS CLI'
+
+- script: |
+    echo "Configuring AWS CLI..."
+    aws configure set aws_access_key_id $(AWS_ACCESS_KEY_ID)
+    aws configure set aws_secret_access_key $(AWS_SECRET_ACCESS_KEY)
+    aws configure set default.region $(AWS_REGION)
+  displayName: 'Configure AWS CLI'
+
+- script: |
+    echo "Assuming AWS Role..."
+    ASSUME_ROLE_CREDS=$(aws sts assume-role --role-arn $(ROLE_ARN) --role-session-name AzureDevOpsSession)
+    export AWS_ACCESS_KEY_ID=$(echo $ASSUME_ROLE_CREDS | jq -r '.Credentials.AccessKeyId')
+    export AWS_SECRET_ACCESS_KEY=$(echo $ASSUME_ROLE_CREDS | jq -r '.Credentials.SecretAccessKey')
+    export AWS_SESSION_TOKEN=$(echo $ASSUME_ROLE_CREDS | jq -r '.Credentials.SessionToken')
+    echo "AWS CLI is now configured with assumed role."
+  displayName: 'Assume AWS Role'
+
+- script: |
+    echo "Running AWS Commands..."
+    # Example AWS command using the assumed role
+    aws s3 ls
+  displayName: 'Execute AWS Commands'
+------------
+
 
