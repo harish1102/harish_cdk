@@ -1,3 +1,30 @@
+CREATE TABLE iam_policy_json_ext (
+  json_document CLOB
+)
+ORGANIZATION EXTERNAL (
+  TYPE ORACLE_LOADER
+  DEFAULT DIRECTORY aws_iam_json_dir
+  ACCESS PARAMETERS (
+    RECORDS DELIMITED BY NEWLINE
+    BADFILE 'iam_policy_json_ext.bad'
+    LOGFILE 'iam_policy_json_ext.log'
+    FIELDS (
+      json_document CHAR(4000)
+    )
+  )
+  LOCATION ('your_iam_policy_file.json') -- Replace with your JSON file name
+)
+REJECT LIMIT UNLIMITED;
+-----
+SELECT j.json_document.PolicyName, j.json_document.PolicyId
+FROM iam_policy_json_ext,
+     JSON_TABLE(json_document, '$'
+                COLUMNS (
+                  PolicyName VARCHAR2(256) PATH '$.PolicyName',
+                  PolicyId VARCHAR2(256) PATH '$.PolicyId'
+                )) j;
+
+----
 trigger:
 - main
 
