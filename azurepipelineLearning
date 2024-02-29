@@ -1,3 +1,50 @@
+trigger:
+- main
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+jobs:
+- job: CreateBackupBranch
+  steps:
+  - checkout: none
+  - task: PowerShell@2
+    inputs:
+      targetType: 'inline'
+      script: |
+        # Define variables
+        $organization = "https://dev.azure.com/YOUR_ORGANIZATION"
+        $project = "YOUR_PROJECT"
+        $repositoryId = "YOUR_REPOSITORY_ID"
+        $sourceBranch = "refs/heads/YOUR_SOURCE_BRANCH"
+        $backupBranchName = "refs/heads/backup/YOUR_BACKUP_BRANCH_NAME"
+        $patToken = "YOUR_PERSONAL_ACCESS_TOKEN"
+
+        # Encode PAT Token for authentication
+        $base64AuthInfo = [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes(":$($patToken)"))
+
+        # Get the last commit ID of the source branch
+        $uri = "$organization/$project/_apis/git/repositories/$repositoryId/refs?filter=$sourceBranch&api-version=6.0"
+        $headers = @{Authorization=("Basic {0}" -f $base64AuthInfo)}
+        $response = Invoke-RestMethod -Uri $uri -Method Get -Headers $headers
+        $commitId = $response.value[0].objectId
+
+        # Create a new backup branch with the last commit ID
+        $uri = "$organization/$project/_apis/git/repositories/$repositoryId/refs?api-version=6.0"
+        $body = @"
+        [
+          {
+            "name": "$backupBranchName",
+            "oldObjectId": "0000000000000000000000000000000000000000",
+            "newObjectId": "$commitId"
+          }
+        ]
+        "@
+        Invoke-RestMethod -Uri $uri -Method Post -ContentType "application/json" -Headers $headers -Body $body
+        echo "Backup branch created successfully."
+
+------
+
 jobs:
 - job: CreateBranchBeforeMerge
   steps:
