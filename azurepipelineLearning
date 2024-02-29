@@ -1,1 +1,26 @@
+trigger:
+- main
 
+pr:
+- main
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+steps:
+- script: |
+    echo "Checking PR title for specific criteria..."
+    PR_TITLE=$(curl -s -H "Authorization: Bearer $(System.AccessToken)" "https://dev.azure.com/{organization}/{project}/_apis/git/repositories/{repositoryId}/pullRequests/$(System.PullRequest.PullRequestId)?api-version=6.0" | jq -r '.title')
+    echo "PR Title: $PR_TITLE"
+    if [[ "$PR_TITLE" == *"specific criteria"* ]]; then
+      echo "Criteria met, continuing pipeline..."
+    else
+      echo "Criteria not met, skipping pipeline..."
+      exit 1 # or any other way to skip or end the pipeline
+    fi
+  displayName: 'Check PR Title'
+  env:
+    System.AccessToken: $(System.AccessToken)
+
+# Your other pipeline steps would go here
+----
