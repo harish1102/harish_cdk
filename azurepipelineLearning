@@ -1,3 +1,32 @@
+jobs:
+- job: CreateBranchBeforeMerge
+  steps:
+  - checkout: none
+  - script: |
+      #!/bin/bash
+      
+      # Variables
+      ORG_URL="https://dev.azure.com/{organization}"
+      PROJECT="{project}"
+      REPOSITORY_ID="{repositoryId}"
+      SOURCE_BRANCH="refs/heads/{sourceBranchName}"
+      NEW_BRANCH_NAME="refs/heads/{newBranchName}"
+      PAT="{personalAccessToken}"
+      
+      # Encode PAT for Authorization header
+      ENCODED_PAT=$(echo -n ":$PAT" | base64)
+      
+      # Fetch the latest commit ID from the source branch
+      LATEST_COMMIT=$(curl -s -H "Authorization: Basic $ENCODED_PAT" "$ORG_URL/$PROJECT/_apis/git/repositories/$REPOSITORY_ID/refs?filter=$SOURCE_BRANCH&api-version=6.0" | jq -r '.value[0].objectId')
+      
+      # Payload for creating a new branch
+      JSON_PAYLOAD=$(jq -n --arg name "$NEW_BRANCH_NAME" --arg objectId "$LATEST_COMMIT" '[{name: $name, oldObjectId: "0000000000000000000000000000000000000000", newObjectId: $objectId}]')
+      
+      # Create a new branch using the REST API
+      curl -s -X POST -H "Content-Type: application/json" -H "Authorization: Basic $ENCODED_PAT" -d "$JSON_PAYLOAD" "$ORG_URL/$PROJECT/_apis/git/repositories/$REPOSITORY_ID/refs?api-version=6.0"
+      
+      echo "Branch $NEW_BRANCH_NAME created based on $SOURCE_BRANCH"
+    displayName: 'Create New Branch Before PR Merge'
 
 ----
 # Pseudo-code to check for a tag in a PR description or commit message
