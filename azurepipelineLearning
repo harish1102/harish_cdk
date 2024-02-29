@@ -1,3 +1,18 @@
+
+----
+# Pseudo-code to check for a tag in a PR description or commit message
+TAG_TO_CHECK="yourTag"
+PR_ID=$(system.pullRequest.pullRequestId)
+TAG_FOUND=$(call Azure DevOps REST API to get PR details and check for TAG_TO_CHECK)
+
+if [ "$TAG_FOUND" = "true" ]; then
+    echo "Tag found, continuing pipeline..."
+else
+    echo "Tag not found, stopping pipeline..."
+    exit 1 # or use Azure DevOps REST API to cancel the run
+fi
+
+----
 trigger:
 - main
 
