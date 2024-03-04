@@ -1,0 +1,29 @@
+from aws_cdk import Stack
+from aws_cdk import aws_rds as rds
+from aws_cdk import aws_ec2 as ec2
+from constructs import Construct
+
+class AuroraPostgresStack(Stack):
+
+    def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
+        super().__init__(scope, construct_id, **kwargs)
+
+        # Create a VPC for the database
+        vpc = ec2.Vpc(self, "AuroraPostgresVPC",
+                      max_azs=2  # default is all AZs in the region
+                      )
+
+        # Define the Aurora PostgreSQL database cluster
+        cluster = rds.DatabaseCluster(self, "AuroraPostgresCluster",
+                                      engine=rds.DatabaseClusterEngine.aurora_postgres(
+                                          version=rds.AuroraPostgresEngineVersion.VER_13_4),
+                                      instance_props=rds.InstanceProps(
+                                          vpc=vpc,
+                                          vpc_subnets=ec2.SubnetSelection(subnet_type=ec2.SubnetType.PRIVATE)
+                                      ),
+                                      removal_policy=cdk.RemovalPolicy.DESTROY,  # Use with caution
+                                      default_database_name="MyDatabase"
+                                      )
+
+        # Output the cluster endpoint
+        self.cluster_endpoint = cluster.cluster_endpoint.socket_address
