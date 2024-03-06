@@ -1,0 +1,7 @@
+# Replace `sarXX` with the specific file for the day you are interested in (e.g., `sar01` for the first day of the month)
+sar -n DEV -f /var/log/sa/sarXX | grep 'Average\|IFACE\|eth0'
+
+
+sar -n DEV -f /var/log/sa/sarXX | awk '/eth0/ { if($5>rx) { rx=$5 }; if($6>tx) { tx=$6 } } END { print "Max RX: " rx " KB/s, Max TX: " tx " KB/s" }'
+
+
