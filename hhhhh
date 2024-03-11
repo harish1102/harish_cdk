@@ -1,0 +1,11 @@
+OPTIONS (SKIP=1)
+LOAD DATA
+INFILE 'example.txt'
+INTO TABLE your_table_name
+FIELDS TERMINATED BY ',' OPTIONALLY ENCLOSED BY '"'
+TRAILING NULLCOLS
+(
+    column1,
+    column2 DATE "DD-MON-YY",
+    column3
+)
