@@ -24,4 +24,8 @@ SQLEXEC (ID check_flag, QUERY "BEGIN check_flag_value(:ID, :APPLY); END;", PARAM
 FILTER (@GETVAL(check_flag.apply_flag) = 1),
 COLMAP (USEDEFAULTS, ...);
 -----
+MAP source_schema.source_table, TARGET target_schema.target_table,
+FILTER (@COLVAL(source_schema.source_table.status_column, 'VARCHAR2') != 'Inactive'),
+COLMAP (USEDEFAULTS, ...);
+----
 
