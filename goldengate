@@ -1,0 +1,27 @@
+CREATE OR REPLACE PROCEDURE check_flag_value(
+    p_id IN target_table.id%TYPE,
+    p_apply OUT NUMBER
+) AS
+    l_flag target_table.flag%TYPE;
+BEGIN
+    SELECT flag INTO l_flag FROM target_table WHERE id = p_id;
+    
+    IF l_flag = 'N' THEN
+        p_apply := 0; -- Do not apply the update
+    ELSE
+        p_apply := 1; -- Apply the update
+    END IF;
+EXCEPTION
+    WHEN NO_DATA_FOUND THEN
+        p_apply := 1; -- Apply the update if the row does not exist
+    WHEN OTHERS THEN
+        p_apply := 0; -- Default to not applying for any other errors
+END;
+/
+-----
+MAP source_schema.source_table, TARGET target_schema.target_table,
+SQLEXEC (ID check_flag, QUERY "BEGIN check_flag_value(:ID, :APPLY); END;", PARAMS (ID = id, APPLY = apply_flag)),
+FILTER (@GETVAL(check_flag.apply_flag) = 1),
+COLMAP (USEDEFAULTS, ...);
+-----
+
