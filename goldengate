@@ -28,4 +28,22 @@ MAP source_schema.source_table, TARGET target_schema.target_table,
 FILTER (@COLVAL(source_schema.source_table.status_column, 'VARCHAR2') != 'Inactive'),
 COLMAP (USEDEFAULTS, ...);
 ----
+CREATE OR REPLACE PROCEDURE update_if_flag_yes(
+    p_id IN target_table.id%TYPE,
+    p_name IN target_table.name%TYPE)
+IS
+    v_flag target_table.flag%TYPE;
+BEGIN
+    SELECT flag INTO v_flag FROM target_table WHERE id = p_id;
+    IF v_flag = 'YES' THEN
+        UPDATE target_table SET name = p_name WHERE id = p_id;
+    END IF;
+END;
+/
+----
+MAP source_schema.source_table, TARGET target_schema.target_table,
+SQLEXEC (ID update_proc, 
+         QUERY "EXEC update_if_flag_yes(:id, :name);",
+         PARAMS(id = COLS(id), name = COLS(name)));
+------
 
