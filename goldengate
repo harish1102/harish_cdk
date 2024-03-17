@@ -46,4 +46,20 @@ SQLEXEC (ID update_proc,
          QUERY "EXEC update_if_flag_yes(:id, :name);",
          PARAMS(id = COLS(id), name = COLS(name)));
 ------
-
+-- Example stored procedure in the target database
+CREATE OR REPLACE PROCEDURE check_and_update_target(
+    p_id IN NUMBER,
+    p_data IN VARCHAR2) AS
+BEGIN
+    -- Example logic: check a condition in the target database
+    IF (SELECT extra_column FROM target_table WHERE id = p_id) = 'specific_value' THEN
+        -- Apply update
+        UPDATE target_table SET data_column = p_data WHERE id = p_id;
+    END IF;
+END;
+/
+---
+MAP source_schema.source_table, TARGET target_schema.target_table,
+SQLEXEC (ID check_update, QUERY "EXEC check_and_update_target(:id, :data);",
+PARAMS (id = @GETVAL('ID'), data = @GETVAL('DATA_COLUMN')));
+-----
