@@ -63,3 +63,26 @@ MAP source_schema.source_table, TARGET target_schema.target_table,
 SQLEXEC (ID check_update, QUERY "EXEC check_and_update_target(:id, :data);",
 PARAMS (id = @GETVAL('ID'), data = @GETVAL('DATA_COLUMN')));
 -----
+CREATE OR REPLACE PROCEDURE handle_update_delete (
+    p_operation IN VARCHAR2,
+    p_id IN YOUR_TABLE.ID%TYPE,
+    p_data IN YOUR_TABLE.DATA_COLUMN%TYPE DEFAULT NULL -- Example for update
+) AS
+BEGIN
+    IF p_operation = 'UPDATE' THEN
+        UPDATE your_table
+        SET data_column = p_data
+        WHERE id = p_id;
+    ELSIF p_operation = 'DELETE' THEN
+        DELETE FROM your_table
+        WHERE id = p_id;
+    END IF;
+END;
+/
+
+-----
+MAP source_schema.source_table, TARGET target_schema.target_table,
+SQLEXEC (ID handle_upd_del,
+         QUERY "BEGIN handle_update_delete(:operation_type, :id, :data); END;",
+         PARAMS(operation_type = @GETENV ('GGHEADER', 'OPTYPE'), id = COLS(id), data = COLS(data_column)));
+-------
