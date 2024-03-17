@@ -1,0 +1,4 @@
+SELECT timestamp, db_user, object_schema, object_name, action_name
+FROM unified_audit_trail
+WHERE action_name = 'EXECUTE' AND object_name = 'YOUR_PROCEDURE_NAME';
+----
