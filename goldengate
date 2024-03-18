@@ -86,3 +86,34 @@ SQLEXEC (ID handle_upd_del,
          QUERY "BEGIN handle_update_delete(:operation_type, :id, :data); END;",
          PARAMS(operation_type = @GETENV ('GGHEADER', 'OPTYPE'), id = COLS(id), data = COLS(data_column)));
 -------
+CREATE OR REPLACE PROCEDURE handle_dml_operations (
+    p_operation IN VARCHAR2,
+    p_key IN target_table.key_column%TYPE,
+    p_value IN target_table.value_column%TYPE DEFAULT NULL -- Example for INSERT/UPDATE
+) AS
+BEGIN
+    IF p_operation = 'INSERT' THEN
+        -- Perform insert operation
+        INSERT INTO target_table (key_column, value_column)
+        VALUES (p_key, p_value);
+        
+    ELSIF p_operation = 'UPDATE' THEN
+        -- Perform update operation
+        UPDATE target_table
+        SET value_column = p_value
+        WHERE key_column = p_key;
+        
+    ELSIF p_operation = 'DELETE' THEN
+        -- Perform delete operation
+        DELETE FROM target_table
+        WHERE key_column = p_key;
+    END IF;
+END;
+/
+------
+MAP source_schema.source_table, TARGET target_schema.target_table,
+SQLEXEC (ID exec_proc,
+         QUERY "BEGIN handle_dml_operations(:optype, :key, :value); END;",
+         PARAMS(optype = @GETENV('GGHEADER', 'OPTYPE'), key = COLS(key_column), value = COLS(value_column)));
+------
+
