@@ -1,0 +1,10 @@
+CREATE OR REPLACE TRIGGER enable_trace_on_error
+AFTER SERVERERROR ON DATABASE
+BEGIN
+    IF (IS_SERVERERROR(600)) THEN -- Example for ORA-00600
+        EXECUTE IMMEDIATE 'ALTER SESSION SET EVENTS ''10046 trace name context forever, level 12''';
+    END IF;
+END;
+/
+------
+  
