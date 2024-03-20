@@ -7,4 +7,21 @@ BEGIN
 END;
 /
 ------
-  
+CREATE OR REPLACE TRIGGER enable_sql_trace_after_login
+AFTER LOGON ON DATABASE
+BEGIN
+    -- Check for a specific user or condition
+    IF (USER = 'MY_USER') THEN
+        -- Enable SQL trace for the session
+        -- The parameters are: SID, SERIAL#, event, level
+        -- For SQL Trace, event is 10046. A level of 8 or 12 is commonly used.
+        DBMS_SYSTEM.SET_EV(sid => SYS_CONTEXT('USERENV', 'SID'), 
+                           serial# => NULL, 
+                           event => 10046, 
+                           level => 12, 
+                           name => '');
+    END IF;
+END;
+/
+-----
+
