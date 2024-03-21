@@ -1,0 +1,26 @@
+from constructs import Construct
+from aws_cdk import (
+    Stack,
+    aws_rds as rds,
+    aws_ec2 as ec2,
+)
+
+class MyAuroraServerlessStack(Stack):
+
+    def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
+        super().__init__(scope, construct_id, **kwargs)
+
+        # Use the default VPC
+        vpc = ec2.Vpc.from_lookup(self, "VPC", is_default=True)
+
+        # Create the Aurora Serverless Cluster
+        cluster = rds.ServerlessCluster(self, "MyAuroraCluster",
+            engine=rds.DatabaseClusterEngine.aurora_postgres(version=rds.AuroraPostgresEngineVersion.VER_10_14),
+            vpc=vpc,
+            default_database_name="MyDatabase",
+            scaling=rds.ServerlessScalingOptions(
+                auto_pause=cdk.Duration.minutes(10),  # Automatically pause after 10 minutes of inactivity
+                min_capacity=rds.AuroraCapacityUnit.ACU_8,  # Minimum capacity
+                max_capacity=rds.AuroraCapacityUnit.ACU_32,  # Maximum capacity
+            )
+        )
