@@ -70,3 +70,42 @@ for pid in $pids; do
     fi
 done
 ----
+#!/bin/bash
+
+# Oracle user, password, and SID
+# Securely store and access your credentials. This is just a placeholder.
+ORACLE_USER="your_oracle_user"
+ORACLE_PASS="your_oracle_password"
+ORACLE_SID="your_oracle_sid"
+ORACLE_HOME="/path/to/oracle_home"
+PATH=$ORACLE_HOME/bin:$PATH
+
+# Temp file to store query results
+temp_file="oracle_sessions_$$.tmp"
+
+# SQL query to fetch Oracle session serial# and corresponding OS PID
+sql_query="SET PAGESIZE 0 FEEDBACK OFF VERIFY OFF HEADING OFF ECHO OFF;
+SELECT s.serial#, p.spid
+FROM v\$session s, v\$process p
+WHERE s.paddr = p.addr;"
+
+# Execute SQL query and save results to temp file
+echo "$sql_query" | sqlplus -s "$ORACLE_USER/$ORACLE_PASS@$ORACLE_SID" > "$temp_file"
+
+# Read each line from temp file
+while read -r line; do
+    serial=$(echo "$line" | awk '{print $1}')
+    spid=$(echo "$line" | awk '{print $2}')
+
+    # Check if /proc/$spid exists (i.e., if the process is still running)
+    if [ -d "/proc/$spid" ]; then
+        state=$(grep "State:" /proc/"$spid"/status | awk '{print $2}')
+        echo "Oracle Session Serial#: $serial, OS PID: $spid, State: $state"
+    else
+        echo "Oracle Session Serial#: $serial, OS PID: $spid, State: Not running"
+    fi
+done < "$temp_file"
+
+# Cleanup
+rm -f "$temp_file"
+------
