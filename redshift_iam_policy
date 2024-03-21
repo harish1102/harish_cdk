@@ -1,0 +1,28 @@
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": [
+                "redshift-serverless:CreateNamespace",
+                "redshift-serverless:DeleteNamespace",
+                "redshift-serverless:ListNamespaces",
+                "redshift-serverless:GetNamespace",
+                "redshift-serverless:CreateWorkgroup",
+                "redshift-serverless:DeleteWorkgroup",
+                "redshift-serverless:ListWorkgroups",
+                "redshift-serverless:GetWorkgroup",
+                "redshift-serverless:UpdateWorkgroup",
+                "redshift-serverless:AssociateDataShareConsumer",
+                "redshift-serverless:DisassociateDataShareConsumer",
+                "redshift:CreateClusterUser",
+                "redshift:CreateCluster",
+                "redshift:DescribeClusters",
+                "redshift:DeleteCluster",
+                "redshift:ModifyCluster",
+                "iam:PassRole"
+            ],
+            "Resource": "*"
+        }
+    ]
+}
