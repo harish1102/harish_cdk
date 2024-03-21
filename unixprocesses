@@ -1,0 +1,43 @@
+#!/bin/bash
+
+# Directory to store logs
+log_dir="./pid_logs"
+mkdir -p "$log_dir"
+
+# File to keep track of seen PIDs
+seen_pids_file="$log_dir/seen_pids.txt"
+> "$seen_pids_file" # Clear the file at the start
+
+# Function to log new processes
+log_new_processes() {
+    for pid in /proc/[0-9]*
+    do
+        pid=${pid#/proc/} # Extract just the PID number
+        if ! grep -q "^$pid$" "$seen_pids_file"; then
+            echo "$pid" >> "$seen_pids_file"
+            start_time=$(date +%s -r /proc/"$pid")
+            echo "$pid started at $start_time" >> "$log_dir/pid_$pid.log"
+        fi
+    done
+}
+
+# Monitor and log process termination
+monitor_and_log_termination() {
+    while read -r pid; do
+        if [ ! -d "/proc/$pid" ]; then
+            # Process has terminated, log the time
+            end_time=$(date +%s)
+            start_time=$(date +%s -r "$log_dir/pid_$pid.log")
+            duration=$((end_time - start_time))
+            echo "$pid terminated at $end_time (Duration: $duration seconds)" >> "$log_dir/pid_$pid.log"
+            sed -i "/^$pid$/d" "$seen_pids_file" # Remove PID from seen list
+        fi
+    done < "$seen_pids_file"
+}
+
+# Main loop
+while true; do
+    log_new_processes
+    monitor_and_log_termination
+    sleep 1 # Polling interval
+done
