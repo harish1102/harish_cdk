@@ -1,0 +1,42 @@
+# aurora_primary_stack.py
+from aws_cdk import (
+    aws_rds as rds,
+    aws_ec2 as ec2,
+    aws_secretsmanager as secretsmanager,
+    core
+)
+
+class AuroraPrimaryStack(core.Stack):
+    def __init__(self, scope: core.Construct, id: str, **kwargs) -> None:
+        super().__init__(scope, id, **kwargs)
+
+        # VPC for the Aurora Cluster (assuming default VPC for simplicity)
+        vpc = ec2.Vpc.from_lookup(self, "VPC", is_default=True)
+
+        # Aurora Serverless V2 Cluster
+        cluster = rds.ServerlessCluster(self, "AuroraPrimaryCluster",
+            engine=rds.DatabaseClusterEngine.aurora_postgres(version=rds.AuroraPostgresEngineVersion.VER_13_4),
+            vpc=vpc,
+            default_database_name="MyDatabase",
+            scaling=rds.ServerlessScalingOptions(
+                auto_pause=core.Duration.minutes(10)  # Example configuration
+            ),
+            enable_data_api=True  # Enable Data API for easy access
+        )
+
+        # Output the cluster ARN
+        core.CfnOutput(self, "PrimaryClusterARN", value=cluster.cluster_arn)
+-----
+cdk deploy AuroraPrimaryStack --region us-east-1
+-----
+aws rds create-global-cluster \
+    --global-cluster-identifier my-global-database \
+    --source-db-cluster-identifier [Primary Cluster ARN] \
+    --region us-east-1
+
+aws rds add-db-cluster-to-global-cluster \
+    --global-cluster-identifier my-global-database \
+    --db-cluster-identifier [Secondary Cluster ARN] \
+    --region us-east-2
+-------
+
