@@ -41,3 +41,32 @@ while true; do
     monitor_and_log_termination
     sleep 1 # Polling interval
 done
+-----
+#!/bin/bash
+
+# Get PIDs of all running processes using ps
+pids=$(ps -eo pid)
+
+# Loop through each PID and extract information from /proc/[PID]
+for pid in $pids; do
+    # Skip the header
+    if [[ $pid == "PID" ]]; then
+        continue
+    fi
+
+    proc_dir="/proc/$pid"
+
+    # Check if /proc/[PID] exists (the process may have terminated)
+    if [[ -d "$proc_dir" ]]; then
+        echo "Process ID: $pid"
+        
+        # Extract and print some basic information about the process
+        echo "Cmdline: $(<"$proc_dir/cmdline")"
+        echo "Status: "
+        cat "$proc_dir/status" | grep "State:"  # Print process state
+        echo "------"
+    else
+        echo "Process $pid has terminated."
+    fi
+done
+----
