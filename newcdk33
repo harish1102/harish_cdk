@@ -23,3 +23,24 @@ class AuroraPostgresClusterStack(cdk.Stack):
                                        },
                                        # Define other properties like credentials, cluster size, etc.
                                        )
+
+
+-------
+#!/usr/bin/env python3
+
+from aws_cdk import core as cdk
+from stacks.aurora_postgres_cluster_stack import AuroraPostgresClusterStack
+
+app = cdk.App()
+
+# Deploy the primary cluster in us-east-1
+primary_cluster_stack = AuroraPostgresClusterStack(app, "PrimaryAuroraClusterStack", region="us-east-1",
+                                                   env=cdk.Environment(account="your-account-id", region="us-east-1"))
+
+# Deploy the secondary cluster in us-east-2
+secondary_cluster_stack = AuroraPostgresClusterStack(app, "SecondaryAuroraClusterStack", region="us-east-2",
+                                                     env=cdk.Environment(account="your-account-id", region="us-east-2"))
+
+app.synth()
+----
+
