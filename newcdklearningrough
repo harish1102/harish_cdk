@@ -61,3 +61,43 @@ MyCdkStack(app, "MyCdkStack")
 app.synth()
 ----
 
+from aws_cdk import core as cdk
+from aws_cdk import aws_ec2 as ec2
+
+class MyStack(cdk.Stack):
+    def __init__(self, scope: cdk.Construct, construct_id: str, **kwargs) -> None:
+        super().__init__(scope, construct_id, **kwargs)
+        
+        # Specify the Security Group ID
+        sg_id = "sg-1234567890abcdef0"
+        
+        # Import the existing Security Group
+        existing_sg = ec2.SecurityGroup.from_security_group_id(self, "ExistingSG", security_group_id=sg_id)
+        
+        # Now you can use existing_sg as a variable representing the imported Security Group
+
+
+-------
+from aws_cdk import core as cdk
+from aws_cdk import aws_ec2 as ec2
+
+class MyStack(cdk.Stack):
+    def __init__(self, scope: cdk.Construct, construct_id: str, **kwargs) -> None:
+        super().__init__(scope, construct_id, **kwargs)
+        
+        # Specify the VPC ID
+        vpc_id = "vpc-1234567890abcdef0"
+        
+        # Import the existing VPC
+        vpc = ec2.Vpc.from_lookup(self, "ExistingVPC", vpc_id=vpc_id)
+        
+        # Accessing subnet information
+        # Example: Get the IDs of all private subnets
+        private_subnet_ids = [subnet.subnet_id for subnet in vpc.private_subnets]
+        
+        # Now you can use vpc and private_subnet_ids as variables
+        # For example, printing subnet IDs to the console
+        for subnet_id in private_subnet_ids:
+            cdk.CfnOutput(self, f"SubnetID{subnet_id}", value=subnet_id)
+------
+
