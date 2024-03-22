@@ -1,0 +1,46 @@
+from aws_cdk import (
+    core as cdk,
+    aws_rds as rds,
+    aws_ec2 as ec2,
+    aws_kms as kms,
+)
+
+class GlobalAuroraPostgresStack(cdk.Stack):
+
+    def __init__(self, scope: cdk.Construct, construct_id: str, **kwargs):
+        super().__init__(scope, construct_id, **kwargs)
+
+        # Define an existing VPC (replace with your VPC details)
+        vpc = ec2.Vpc.from_lookup(self, "VPC", is_default=True)
+        
+        # Optionally, define a KMS key for encryption
+        kms_key = kms.Key(self, "AuroraGlobalClusterKey")
+        
+        # Define the primary Aurora PostgreSQL cluster (without the 'database_name' parameter for global clusters)
+        primary_cluster = rds.CfnDBCluster(
+            self,
+            "PrimaryCluster",
+            engine="aurora-postgresql",
+            engine_version="12.4", # Specify your desired version
+            engine_mode="provisioned",
+            master_username="admin", # Do not hard-code in production
+            master_user_password="secret123!", # Do not hard-code in production, use Secrets Manager
+            db_subnet_group_name=vpc.select_subnets(subnet_type=ec2.SubnetType.PRIVATE).subnet_group_name,
+            kms_key_id=kms_key.key_id,
+            db_cluster_parameter_group_name="default.aurora-postgresql12",
+            vpc_security_group_ids=[...], # Specify your VPC security group IDs
+            storage_encrypted=True,
+        )
+
+        # Define the global cluster that includes the primary cluster
+        global_cluster = rds.CfnGlobalCluster(
+            self,
+            "MyGlobalCluster",
+            engine_version="12.4", # Ensure this matches the primary cluster's engine version
+            storage_encrypted=True,
+            kms_key_id=kms_key.key_id,
+            source_db_cluster_identifier=primary_cluster.ref, # Associate the primary cluster with the global cluster
+        )
+
+        # Modify the primary cluster to be part of the global cluster
+        primary_cluster.add_property_override("GlobalClusterIdentifier", global_cluster.ref)
