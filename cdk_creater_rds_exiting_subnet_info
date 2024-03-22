@@ -1,0 +1,23 @@
+from aws_cdk import aws_rds as rds
+from aws_cdk import aws_ec2 as ec2
+from aws_cdk import Stack
+from constructs import Construct
+
+class AuroraPostgresRdsStack(Stack):
+    def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
+        super().__init__(scope, construct_id, **kwargs)
+        
+        # Assuming you have an existing VPC and know its ID or you're creating a new one
+        # If you have an existing VPC, replace this with a `Vpc.from_lookup()` call
+        vpc = ec2.Vpc(self, "MyVPC")
+
+        # Example: Creating a serverless Aurora PostgreSQL cluster
+        cluster = rds.ServerlessCluster(self, "AuroraPostgresCluster",
+                                        engine=rds.DatabaseClusterEngine.aurora_postgres(version=rds.AuroraPostgresEngineVersion.VER_10_14),
+                                        vpc=vpc,
+                                        # Specify the existing subnet group name here
+                                        vpc_subnets=ec2.SubnetSelection(subnet_group_name="my-existing-subnet-group"),
+                                        default_database_name="MyDatabase"
+                                        )
+
+        # Use the cluster in your application as needed
