@@ -1,0 +1,63 @@
+from aws_cdk import aws_ec2 as ec2
+from aws_cdk import core as cdk
+
+class MyCdkStack(cdk.Stack):
+    def __init__(self, scope: cdk.Construct, construct_id: str, **kwargs):
+        super().__init__(scope, construct_id, **kwargs)
+        
+        # Assuming an existing VPC ID is provided
+        # In practice, you would use the VPC ID to look up or import the VPC
+        vpc_id = "vpc-xxxxxxxxxxxxx"
+        vpc = ec2.Vpc.from_lookup(self, "VPC", vpc_id=vpc_id)
+        
+        # Create a new Security Group in the VPC
+        sg = ec2.SecurityGroup(self, "MySecurityGroup",
+                               vpc=vpc,
+                               description="Example security group",
+                               security_group_name="MyExampleSecurityGroup")
+        
+        # Output the Security Group Name
+        cdk.CfnOutput(self, "SecurityGroupName", value=sg.security_group_name)
+
+# App and stack definition here
+app = cdk.App()
+MyCdkStack(app, "MyCdkStack")
+app.synth()
+
+-----
+from aws_cdk import core as cdk
+from aws_cdk import aws_ec2 as ec2
+
+class MyCdkStack(cdk.Stack):
+
+    def __init__(self, scope: cdk.Construct, construct_id: str, **kwargs) -> None:
+        super().__init__(scope, construct_id, **kwargs)
+
+        # Assuming you already have a VPC ID
+        vpc_id = "vpc-1234567890abcdef0"
+        
+        # Fetch the existing VPC
+        vpc = ec2.Vpc.from_lookup(self, "ExistingVPC", vpc_id=vpc_id)
+
+        # Security Group ID that you want to import
+        sg_id = "sg-0123456789abcdef0"
+        
+        # Importing the existing Security Group by its ID
+        sg = ec2.SecurityGroup.from_security_group_id(self, "ImportedSG", security_group_id=sg_id)
+        
+        # Example: Using the imported security group with an EC2 instance
+        ec2_instance = ec2.Instance(self, "Instance",
+                                    instance_type=ec2.InstanceType("t3.micro"),
+                                    machine_image=ec2.MachineImage.latest_amazon_linux(),
+                                    vpc=vpc,
+                                    security_group=sg
+                                    )
+
+        # Note: Directly printing the security group's name is not supported here
+        # as the CDK app synthesizes to CloudFormation templates.
+
+app = cdk.App()
+MyCdkStack(app, "MyCdkStack")
+app.synth()
+----
+
