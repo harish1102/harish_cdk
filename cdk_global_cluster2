@@ -1,0 +1,30 @@
+from aws_cdk import aws_rds as rds
+from aws_cdk import core as cdk
+
+class GlobalAuroraStack(cdk.Stack):
+    def __init__(self, scope: cdk.Construct, id: str, **kwargs) -> None:
+        super().__init__(scope, id, **kwargs)
+
+        # Define the global database
+        global_db = rds.CfnGlobalCluster(
+            self, "MyGlobalAurora",
+            engine="aurora-postgresql",
+            engine_version="13.4", # Specify the engine version you plan to use
+            global_cluster_identifier="my-global-aurora-cluster",
+            # Additional configuration options as needed
+        )
+--------
+# Primary cluster in the primary region
+primary_cluster = rds.CfnDBCluster(
+    self, "PrimaryCluster",
+    engine="aurora-postgresql",
+    engine_version="13.4",
+    database_name="MyDatabase",
+    master_username="admin",
+    master_user_password="YOUR_PASSWORD_HERE",  # Secure this properly
+    db_subnet_group_name="your-subnet-group",
+    db_cluster_identifier="primary-cluster",
+    global_cluster_identifier=global_db.ref,  # Link to global cluster
+    # Ensure the subnet group and security groups are correctly configured
+)
+------
