@@ -1,0 +1,61 @@
+mkdir MyServerlessCluster
+cd MyServerlessCluster
+cdk init app --language=python
+---
+python3 -m venv .venv
+source .venv/bin/activate
+pip install aws-cdk-lib constructs
+pip install aws-cdk.aws-rds
+--
+app.py
+
+from aws_cdk import core as cdk
+from aws_cdk import aws_rds as rds
+from constructs import Construct
+
+class MyServerlessClusterStack(cdk.Stack):
+
+    def __init__(self, scope: Construct, id: str, **kwargs) -> None:
+        super().__init__(scope, id, **kwargs)
+
+        # Define the serverless cluster
+        cluster = rds.ServerlessCluster(self, "MyServerlessCluster",
+            engine=rds.DatabaseClusterEngine.AURORA_MYSQL,
+            vpc_subnets={
+                "subnet_type": ec2.SubnetType.PRIVATE,
+            },
+            default_database_name="MyDatabase",
+            vpc=... # Specify your VPC here
+        )
+
+app = cdk.App()
+MyServerlessClusterStack(app, "MyServerlessClusterStack")
+app.synth()
+----
+&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+from aws_cdk import core
+from aws_cdk import aws_rds as rds
+from aws_cdk import aws_ec2 as ec2
+
+class MyServerlessDatabaseStack(core.Stack):
+    def __init__(self, scope: core.Construct, id: str, **kwargs) -> None:
+        super().__init__(scope, id, **kwargs)
+
+        # Define a VPC for the database cluster (best practice)
+        vpc = ec2.Vpc(self, "MyVPC")
+
+        # Create the serverless database cluster
+        cluster = rds.ServerlessCluster(self, "MyServerlessCluster",
+            engine=rds.DatabaseClusterEngine.AURORA_MYSQL,
+            vpc=vpc,
+            scaling=rds.ServerlessScalingOptions(
+                auto_pause=core.Duration.minutes(10), # Auto-pause after 10 minutes of inactivity
+                min_capacity=rds.AuroraCapacityUnit.ACU_2, # Minimum capacity (specify based on your needs)
+                max_capacity=rds.AuroraCapacityUnit.ACU_16, # Maximum capacity (specify based on your needs)
+            )
+        )
+
+app = core.App()
+MyServerlessDatabaseStack(app, "MyServerlessDatabaseStack")
+app.synth()
+=====================
