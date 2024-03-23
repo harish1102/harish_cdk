@@ -59,3 +59,42 @@ app = core.App()
 MyServerlessDatabaseStack(app, "MyServerlessDatabaseStack")
 app.synth()
 =====================
+&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+from aws_cdk import core as cdk
+from aws_cdk import aws_rds as rds
+from aws_cdk import aws_ec2 as ec2
+
+class GlobalAuroraPostgreSQLStack(cdk.Stack):
+    def __init__(self, scope: cdk.Construct, id: str, **kwargs) -> None:
+        super().__init__(scope, id, **kwargs)
+
+        # Create a VPC (this should ideally be your existing VPC setup)
+        vpc = ec2.Vpc(self, "VPC")
+
+        # Create the primary Aurora Serverless Cluster in us-east-1
+        primary_cluster = rds.ServerlessCluster(self, "PrimaryCluster",
+            engine=rds.DatabaseClusterEngine.AURORA_POSTGRESQL,
+            vpc=vpc,
+            scaling=rds.ServerlessScalingOptions(auto_pause=cdk.Duration.minutes(10), # Example configuration
+                                                 min_capacity=rds.AuroraCapacityUnit.ACU_2,
+                                                 max_capacity=rds.AuroraCapacityUnit.ACU_8),
+            default_database_name="MyDatabase")
+
+        # Create the Global Aurora Cluster with the primary cluster
+        global_cluster = rds.CfnGlobalCluster(self, "GlobalCluster",
+            engine="aurora-postgresql",
+            engine_version="10.14",
+            storage_encrypted=True,
+            deletion_protection=False,
+            database_name="MyGlobalDatabase",
+            source_db_cluster_identifier=primary_cluster.cluster_arn)
+
+        # For the secondary cluster in us-east-2, you need to manually replicate the above steps in a stack targeted at us-east-2.
+        # Note: AWS CDK currently doesn't support cross-region references directly, so you'll need to handle region deployment separately.
+
+app = cdk.App()
+GlobalAuroraPostgreSQLStack(app, "GlobalAuroraPostgreSQLStack", env={'region': 'us-east-1'})
+
+app.synth()
+=======================
+
