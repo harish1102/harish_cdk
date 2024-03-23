@@ -1,0 +1,46 @@
+from aws_cdk import (
+    Stack,
+    aws_ec2 as ec2,
+    aws_rds as rds,
+    RemovalPolicy
+)
+from constructs import Construct
+
+class AuroraPostgresClusterStack(Stack):
+    def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
+        super().__init__(scope, construct_id, **kwargs)
+
+        # Define a VPC for the Aurora cluster (or use an existing one)
+        vpc = ec2.Vpc(self, "AuroraVpc", max_azs=2)
+
+        # Define the Aurora cluster parameter group
+        cluster_param_group = rds.ParameterGroup(self, "ClusterParameterGroup",
+            engine=rds.DatabaseClusterEngine.aurora_postgres(version=rds.AuroraPostgresEngineVersion.VER_13_4),
+            description="Custom cluster parameter group",
+            parameters={
+                "log_statement": "all"  # Example parameter - log all statements
+            }
+        )
+
+        # Define the instance parameter group
+        instance_param_group = rds.ParameterGroup(self, "InstanceParameterGroup",
+            engine=rds.DatabaseClusterEngine.aurora_postgres(version=rds.AuroraPostgresEngineVersion.VER_13_4),
+            description="Custom instance parameter group",
+            parameters={
+                "log_min_duration_statement": "500"  # Example parameter - Min duration for statement logging in ms
+            }
+        )
+
+        # Create an Aurora PostgreSQL cluster
+        cluster = rds.DatabaseCluster(self, "AuroraPostgresCluster",
+            engine=rds.DatabaseClusterEngine.aurora_postgres(version=rds.AuroraPostgresEngineVersion.VER_13_4),
+            instances=2,  # Number of instances in the cluster
+            instance_props={
+                "vpc": vpc,
+                "instance_type": ec2.InstanceType.of(ec2.InstanceClass.BURSTABLE3, ec2.InstanceSize.MEDIUM),
+                "parameter_group": instance_param_group
+            },
+            parameter_group=cluster_param_group,
+            removal_policy=RemovalPolicy.DESTROY,  # CAREFUL in production environments
+            default_database_name="mydatabase"
+        )
