@@ -40,5 +40,50 @@ AuroraServerlessStack(app, "AuroraServerlessStack")
 
 app.synth()
 -----
+&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+from aws_cdk import (
+    Stack,
+    aws_rds as rds,
+    aws_ec2 as ec2,
+    CfnOutput,
+)
+from constructs import Construct
+
+class AuroraServerlessGlobalDBStack(Stack):
+    def __init__(self, scope: Construct, construct_id: str, **kwargs):
+        super().__init__(scope, construct_id, **kwargs)
+
+        # Define or import a VPC
+        vpc = ec2.Vpc(self, "MyVPC",
+                      max_azs=3  # Adjust based on your requirements
+                      )
+
+        # Create the Aurora Serverless PostgreSQL cluster
+        serverless_cluster = rds.ServerlessCluster(self, "MyServerlessCluster",
+                                                   engine=rds.DatabaseClusterEngine.aurora_postgres(version=rds.AuroraPostgresEngineVersion.VER_10_14),
+                                                   vpc=vpc,
+                                                   scaling=rds.ServerlessScalingOptions(
+                                                       auto_pause=cdk.Duration.hours(1),  # Adjust auto pause time as needed
+                                                       min_capacity=rds.AuroraCapacityUnit.ACU_8,  # Minimum capacity units
+                                                       max_capacity=rds.AuroraCapacityUnit.ACU_32  # Maximum capacity units
+                                                   ),
+                                                   default_database_name="mydatabase"
+                                                   )
+
+        # Create the Aurora Global Database
+        global_db = rds.CfnGlobalCluster(self, "MyGlobalDB",
+                                         engine="aurora-postgresql",
+                                         engine_version="10.14",
+                                         storage_encrypted=True,
+                                         deletion_protection=False,
+                                         global_cluster_identifier="my-global-db",
+                                         source_db_cluster_identifier=serverless_cluster.cluster_arn
+                                         )
+
+        # Output the Serverless Cluster ARN and Global Cluster ARN
+        CfnOutput(self, "ServerlessClusterARN", value=serverless_cluster.cluster_arn)
+        CfnOutput(self, "GlobalClusterARN", value=global_db.attr_arn)
+
+-------------------
 
 
