@@ -1,0 +1,25 @@
+from aws_cdk import Stack
+from aws_cdk import aws_ec2 as ec2
+from aws_cdk import aws_rds as rds
+from constructs import Construct
+
+class MyRdsSubnetGroupStack(Stack):
+    def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
+        super().__init__(scope, construct_id, **kwargs)
+
+        # Assuming you have an existing VPC
+        vpc = ec2.Vpc.from_lookup(self, "VPC", is_default=True)
+
+        # Define subnets across at least two AZs for the DB Subnet Group
+        # Note: The selection criteria depend on your VPC setup.
+        # Ensure your VPC has subnets across multiple AZs for high availability
+        selected_subnets = ec2.SubnetSelection(subnets=vpc.select_subnets(
+            subnet_type=ec2.SubnetType.PRIVATE_WITH_NAT).subnets[:2])
+
+        # Create the DB Subnet Group
+        db_subnet_group = rds.SubnetGroup(self, "MyDBSubnetGroup",
+                                          vpc=vpc,
+                                          description="My DB Subnet Group",
+                                          vpc_subnets=selected_subnets,
+                                          removal_policy=cdk.RemovalPolicy.DESTROY  # CAREFUL in production
+                                          )
