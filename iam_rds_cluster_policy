@@ -31,3 +31,38 @@
         }
     ]
 }
+
+------
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": [
+                "rds:CreateDBCluster",
+                "rds:DeleteDBCluster",
+                "rds:CreateDBInstance",
+                "rds:DeleteDBInstance",
+                "rds:CreateDBSubnetGroup",
+                "rds:DeleteDBSubnetGroup",
+                "rds:CreateDBClusterParameterGroup",
+                "rds:DeleteDBClusterParameterGroup",
+                "rds:CreateDBParameterGroup",
+                "rds:DeleteDBParameterGroup",
+                "secretsmanager:CreateSecret",
+                "secretsmanager:DeleteSecret",
+                "ec2:CreateSecurityGroup",
+                "ec2:DeleteSecurityGroup",
+                "ec2:AuthorizeSecurityGroupIngress",
+                "ec2:AuthorizeSecurityGroupEgress",
+                "ec2:RevokeSecurityGroupIngress",
+                "ec2:RevokeSecurityGroupEgress",
+                "ec2:DescribeVpcs",
+                "ec2:DescribeSubnets",
+                "ec2:DescribeSecurityGroups"
+            ],
+            "Resource": "*"
+        }
+    ]
+}
+----
