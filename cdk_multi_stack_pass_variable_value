@@ -1,0 +1,51 @@
+producer_stack.py
+from aws_cdk import Stack
+from aws_cdk import aws_s3 as s3
+from constructs import Construct
+
+class ProducerStack(Stack):
+    def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
+        super().__init__(scope, construct_id, **kwargs)
+        
+        # Create an S3 Bucket
+        bucket = s3.Bucket(self, "MyBucket")
+        
+        # Output the Bucket ARN so other stacks can reference it
+        self.bucket_arn = bucket.bucket_arn
+-----
+  consumer_stack.py
+from aws_cdk import Stack
+from aws_cdk import aws_s3 as s3
+from constructs import Construct
+
+class ConsumerStack(Stack):
+    def __init__(self, scope: Construct, construct_id: str, bucket_arn: str, **kwargs) -> None:
+        super().__init__(scope, construct_id, **kwargs)
+        
+        # Use the provided bucket ARN to create a policy
+        bucket = s3.Bucket.from_bucket_arn(self, "ImportedBucket", bucket_arn=bucket_arn)
+        bucket.add_to_resource_policy(
+            s3.BucketPolicyStatement(
+                actions=["s3:GetObject"],
+                resources=[f"{bucket_arn}/*"],
+                principals=[s3.AnyPrincipal()]
+            )
+        )
+----
+app.py
+#!/usr/bin/env python3
+import aws_cdk as cdk
+from producer_stack import ProducerStack
+from consumer_stack import ConsumerStack
+
+app = cdk.App()
+
+# Instantiate the Producer Stack
+producer_stack = ProducerStack(app, "ProducerStack")
+
+# Instantiate the Consumer Stack, passing the Bucket ARN from the Producer Stack
+ConsumerStack(app, "ConsumerStack", bucket_arn=producer_stack.bucket_arn)
+
+app.synth()
+-----
+
