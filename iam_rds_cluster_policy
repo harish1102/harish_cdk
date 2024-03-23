@@ -1,0 +1,33 @@
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": [
+                "rds:CreateDBCluster",
+                "rds:DeleteDBCluster",
+                "rds:DescribeDBClusters",
+                "rds:StartDBCluster",
+                "rds:StopDBCluster",
+                "rds:ModifyDBCluster",
+                "rds:AddTagsToResource",
+                "rds:CreateDBInstance",
+                "rds:DeleteDBInstance",
+                "rds:DescribeDBInstances",
+                "rds:ModifyDBInstance",
+                "rds:StartDBInstance",
+                "rds:StopDBInstance",
+                "rds:PromoteReadReplicaDBCluster",
+                "rds:FailoverDBCluster",
+                "rds:RebootDBInstance",
+                "rds:RestoreDBClusterToPointInTime",
+                "rds:RestoreDBClusterFromSnapshot",
+                "rds:RestoreDBClusterFromS3",
+                "rds:CreateDBClusterSnapshot",
+                "rds:DeleteDBClusterSnapshot",
+                "rds:DescribeDBClusterSnapshots"
+            ],
+            "Resource": "*"
+        }
+    ]
+}
