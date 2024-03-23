@@ -1,0 +1,44 @@
+aurora_serverless_stack.py
+from aws_cdk import (
+    Stack,
+    aws_ec2 as ec2,
+    aws_rds as rds,
+    RemovalPolicy,
+)
+from constructs import Construct
+
+class AuroraServerlessStack(Stack):
+    def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
+        super().__init__(scope, construct_id, **kwargs)
+
+        # Define or select a VPC
+        vpc = ec2.Vpc(self, "MyVPC",
+                      max_azs=2  # The number of AZs to use in the VPC
+                      )
+
+        # Create an Aurora Serverless PostgreSQL cluster
+        serverless_cluster = rds.ServerlessCluster(self, "MyAuroraServerlessCluster",
+            engine=rds.DatabaseClusterEngine.AURORA_POSTGRESQL,
+            engine_version="10.14",  # Specify your desired PostgreSQL engine version
+            vpc=vpc,
+            default_database_name="MyDatabase",
+            removal_policy=RemovalPolicy.DESTROY,  # Adjust this for production
+            scaling=rds.ServerlessScalingOptions(
+                auto_pause=cdk.Duration.minutes(10),  # Automatically pause the cluster after 10 minutes of inactivity
+                min_capacity=rds.AuroraCapacityUnit.ACU_8,  # Minimum capacity for the cluster
+                max_capacity=rds.AuroraCapacityUnit.ACU_32,  # Maximum capacity for the cluster
+            ),
+        )
+------
+app.py
+#!/usr/bin/env python3
+from aws_cdk import App
+from aurora_serverless_stack import AuroraServerlessStack
+
+app = App()
+AuroraServerlessStack(app, "AuroraServerlessStack")
+
+app.synth()
+-----
+
+
