@@ -1,0 +1,70 @@
+from aws_cdk import aws_ec2 as ec2
+from aws_cdk import aws_rds as rds
+from aws_cdk import Stack, RemovalPolicy
+from constructs import Construct
+
+class PrimaryClusterStack(Stack):
+    def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
+        super().__init__(scope, construct_id, **kwargs)
+
+        # Create a VPC
+        vpc = ec2.Vpc(self, "PrimaryVPC", max_azs=2)
+
+        # Create the primary Aurora cluster
+        primary_cluster = rds.DatabaseCluster(self, "PrimaryCluster",
+                                              engine=rds.DatabaseClusterEngine.aurora_postgres(
+                                                  version=rds.AuroraPostgresEngineVersion.VER_13_4),
+                                              instances=2,
+                                              instance_props={
+                                                  "vpc": vpc,
+                                                  "instance_type": ec2.InstanceType.of(
+                                                      ec2.InstanceClass.BURSTABLE3, ec2.InstanceSize.MEDIUM),
+                                              },
+                                              removal_policy=RemovalPolicy.DESTROY,
+                                              default_database_name="mydatabase"
+                                             )
+
+        # Output the Cluster ARN and Region
+        self.cluster_arn = primary_cluster.cluster_arn
+        self.cluster_region = self.region
+-----
+from aws_cdk import aws_ec2 as ec2
+from aws_cdk import aws_rds as rds
+from aws_cdk import Stack, RemovalPolicy, CfnParameter
+from constructs import Construct
+
+class SecondaryClusterStack(Stack):
+    def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
+        super().__init__(scope, construct_id, **kwargs)
+
+        # Create a VPC
+        vpc = ec2.Vpc(self, "SecondaryVPC", max_azs=2)
+
+        # Create the secondary Aurora cluster (without specifying the global cluster ID)
+        secondary_cluster = rds.DatabaseCluster(self, "SecondaryCluster",
+                                                engine=rds.DatabaseClusterEngine.aurora_postgres(
+                                                    version=rds.AuroraPostgresEngineVersion.VER_13_4),
+                                                instances=2,
+                                                instance_props={
+                                                    "vpc": vpc,
+                                                    "instance_type": ec2.InstanceType.of(
+                                                        ec2.InstanceClass.BURSTABLE3, ec2.InstanceSize.MEDIUM),
+                                                },
+                                                removal_policy=RemovalPolicy.DESTROY,
+                                                default_database_name="mydatabase"
+                                               )
+
+        # ARN of the primary cluster (manually input)
+        primary_cluster_arn = CfnParameter(self, "PrimaryClusterArn", type="String")
+
+        # Create the global database cluster referencing the primary cluster
+        global_cluster = rds.CfnGlobalCluster(self, "MyGlobalCluster",
+                                              engine_version="13.4",
+                                              source_db_cluster_identifier=primary_cluster_arn.value_as_string,
+                                              storage_encrypted=True
+                                             )
+
+        # Associate the secondary cluster with the global cluster
+        secondary_cluster.add_depends_on(global_cluster)
+----
+  
