@@ -1,0 +1,26 @@
+from aws_cdk import Stack
+from constructs import Construct
+
+class MySampleStack(Stack):
+    def __init__(self, scope: Construct, construct_id: str, **kwargs):
+        super().__init__(scope, construct_id, **kwargs)
+
+        # Your stack resources here
+        # For example, an S3 bucket, an RDS instance, etc.
+-------------
+from aws_cdk import App, Environment
+from my_sample_stack import MySampleStack
+
+app = App()
+
+regions = ['us-east-1', 'us-east-2']
+
+for region in regions:
+    MySampleStack(app, f"MySampleStack-{region}", env=Environment(region=region))
+
+app.synth()
+----------------
+cdk deploy MySampleStack-us-east-1
+cdk deploy MySampleStack-us-east-2
+----------
+&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
