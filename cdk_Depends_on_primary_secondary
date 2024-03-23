@@ -1,0 +1,50 @@
+your_project_stack.py
+
+from aws_cdk import (
+    aws_rds as rds,
+    aws_ec2 as ec2,
+    Stack,
+    RemovalPolicy,
+    CfnOutput
+)
+from constructs import Construct
+
+class YourProjectStack(Stack):
+
+    def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
+        super().__init__(scope, construct_id, **kwargs)
+
+        # Define a VPC (or use an existing one)
+        vpc = ec2.Vpc(self, "VPC")
+
+        # Primary Cluster in us-east-1
+        primary_cluster = rds.ServerlessCluster(self, "PrimaryCluster",
+            engine=rds.DatabaseClusterEngine.aurora_postgres(version=rds.AuroraPostgresEngineVersion.VER_10_14),
+            vpc=vpc,
+            removal_policy=RemovalPolicy.DESTROY,
+            vpc_subnets=ec2.SubnetSelection(subnet_type=ec2.SubnetType.PRIVATE_WITH_NAT),
+        )
+
+        # Secondary Cluster in us-east-2 (Define similarly)
+
+        # Note: Define the secondary cluster similarly in another stack or within this stack but considering the region through environment props
+
+        # The following step to create the global cluster goes here (next step)
+-----------------
+        # Global Cluster
+        global_cluster = rds.CfnGlobalCluster(self, "MyGlobalCluster",
+            engine="aurora-postgresql",
+            engine_version="10.14",
+            storage_encrypted=True,
+            deletion_protection=False,
+            database_name="yourdbname",
+            source_db_cluster_identifier=primary_cluster.cluster_arn
+        )
+
+        # Ensure the global cluster is created after the secondary cluster
+        # This step assumes you've created a secondary cluster variable named `secondary_cluster`
+        global_cluster.add_depends_on(secondary_cluster)
+        
+        # Output the Global Cluster ARN
+        CfnOutput(self, "GlobalClusterARN", value=global_cluster.attr_arn)
+-------------
