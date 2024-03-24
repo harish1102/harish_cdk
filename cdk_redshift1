@@ -1,0 +1,38 @@
+from aws_cdk import (
+    Stack,
+    aws_redshiftserverless as redshiftserverless,
+    aws_iam as iam,
+    RemovalPolicy,
+)
+from constructs import Construct
+
+class MyRedshiftServerlessStack(Stack):
+    def __init__(self, scope: Construct, construct_id: str, **kwargs):
+        super().__init__(scope, construct_id, **kwargs)
+
+        # Create an IAM role for Redshift Serverless
+        redshift_role = iam.Role(
+            self, "RedshiftServerlessRole",
+            assumed_by=iam.ServicePrincipal("redshift-serverless.amazonaws.com"),
+            managed_policies=[
+                iam.ManagedPolicy.from_aws_managed_policy_name("AmazonRedshiftServerlessFullAccess")
+            ]
+        )
+
+        # Define the Redshift Serverless namespace (akin to a cluster in provisioned Redshift)
+        redshift_namespace = redshiftserverless.CfnNamespace(
+            self, "MyRedshiftNamespace",
+            admin_username="adminuser",
+            admin_user_password="SuperSecretPassword123!",  # Please use Secrets Manager
+            db_name="mydatabase",
+            namespace_name="mynamespace",
+            default_iam_role_arn=redshift_role.role_arn,
+        )
+
+        # Note: As of the last update, there's no direct Redshift Serverless construct in CDK.
+        # The example above uses a hypothetical CfnNamespace construct for demonstration.
+        # You'll need to replace it with the actual method to create Redshift Serverless resources
+        # when it becomes available or use custom resources as a workaround.
+
+        # Apply removal policy (Be cautious with removal policies in production environments)
+        redshift_namespace.apply_removal_policy(RemovalPolicy.DESTROY)
