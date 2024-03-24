@@ -1,0 +1,62 @@
+cdk init app --language python
+-------------
+requirements.txt
+aws-cdk-lib==2.x.x
+constructs>=10.0.0,<11.0.0
+
+---------
+redshift_serverless_stack.py
+
+from aws_cdk import (
+    Stack,
+    aws_iam as iam,
+    aws_redshiftserverless as redshiftserverless,
+    RemovalPolicy,
+)
+from constructs import Construct
+
+class RedshiftServerlessStack(Stack):
+    def __init__(self, scope: Construct, construct_id: str, **kwargs):
+        super().__init__(scope, construct_id, **kwargs)
+
+        # Create an IAM role for Redshift Serverless
+        redshift_serverless_role = iam.Role(self, "RedshiftServerlessRole",
+                                            assumed_by=iam.ServicePrincipal("redshift-serverless.amazonaws.com"),
+                                            managed_policies=[
+                                                iam.ManagedPolicy.from_aws_managed_policy_name("AmazonS3ReadOnlyAccess"),
+                                                # Add any additional policies here
+                                            ])
+
+        # Create a Redshift Serverless Namespace
+        serverless_namespace = redshiftserverless.CfnNamespace(self, "MyServerlessNamespace",
+                                                               namespace_name="my-serverless-namespace",
+                                                               admin_username="adminuser",
+                                                               admin_user_password="SuperSecretPassword123!",
+                                                               db_name="mydatabase",
+                                                               iam_roles=[redshift_serverless_role.role_arn]
+                                                               )
+
+        # Create a Redshift Serverless Workgroup
+        serverless_workgroup = redshiftserverless.CfnWorkgroup(self, "MyServerlessWorkgroup",
+                                                               workgroup_name="my-serverless-workgroup",
+                                                               namespace_name=serverless_namespace.namespace_name,
+                                                               base_capacity=32,  # Adjust based on your needs
+                                                               enhanced_vpc_routing=False,  # Set to `True` if required
+                                                               publicly_accessible=True,  # Consider security implications
+                                                               # Define other properties as needed
+                                                               )
+        
+        # Setting a removal policy for the demo, adjust as needed for production
+        serverless_namespace.apply_removal_policy(RemovalPolicy.DESTROY)
+        serverless_workgroup.apply_removal_policy(RemovalPolicy.DESTROY)
+----------------
+app.py
+
+from aws_cdk import App
+from redshift_serverless_stack import RedshiftServerlessStack
+
+app = App()
+RedshiftServerlessStack(app, "RedshiftServerlessStack")
+
+app.synth()
+------------
