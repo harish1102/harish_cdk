@@ -1,0 +1,52 @@
+from aws_cdk import (
+    Stack,
+    aws_iam as iam,
+    aws_ec2 as ec2,
+    aws_redshiftserverless as redshiftserverless,
+    RemovalPolicy
+)
+from constructs import Construct
+
+class RedshiftServerlessStack(Stack):
+    def __init__(self, scope: Construct, id: str, vpc_id: str, subnet_ids: list, **kwargs) -> None:
+        super().__init__(scope, id, **kwargs)
+
+        # Look up the VPC
+        vpc = ec2.Vpc.from_lookup(self, "VPC", vpc_id=vpc_id)
+
+        # Define a role for Redshift Serverless
+        redshift_role = iam.Role(self, "RedshiftServerlessRole",
+                                 assumed_by=iam.ServicePrincipal("redshift-serverless.amazonaws.com"),
+                                 managed_policies=[
+                                     iam.ManagedPolicy.from_aws_managed_policy_name("AmazonRedshiftServerlessFullAccess")
+                                 ])
+
+        # Create the Redshift Serverless Namespace
+        namespace = redshiftserverless.CfnNamespace(self, "MyNamespace",
+                                                    admin_username="admin",
+                                                    admin_user_password="YourSecurePassword",
+                                                    db_name="mydatabase",
+                                                    namespace_name="my-namespace",
+                                                    iam_roles=[redshift_role.role_arn])
+
+        # Create the Redshift Serverless Workgroup
+        workgroup = redshiftserverless.CfnWorkgroup(self, "MyWorkgroup",
+                                                    workgroup_name="my-workgroup",
+                                                    namespace_name=namespace.namespace_name,
+                                                    base_capacity=32,  # Adjust as needed
+                                                    enhanced_vpc_routing=True,
+                                                    publicly_accessible=True,
+                                                    security_group_ids=[],
+                                                    subnet_ids=subnet_ids,
+                                                    )
+        
+        # Optional: Set the removal policy for the namespace if you want it to be removed when the stack is destroyed
+        namespace.apply_removal_policy(RemovalPolicy.DESTROY)
+
+# Example usage in app.py, assuming you know your VPC and subnet IDs
+from aws_cdk import App
+from redshift_serverless_stack import RedshiftServerlessStack
+
+app = App()
+RedshiftServerlessStack(app, "RedshiftServerlessStack", vpc_id="vpc-xxxxxx", subnet_ids=["subnet-xxxxx", "subnet-yyyyy"])
+app.synth()
