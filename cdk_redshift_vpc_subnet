@@ -1,0 +1,58 @@
+cdk init app --language python
+pip install aws-cdk-lib constructs
+
+#redshift_serverless_stack.py
+from aws_cdk import (
+    Stack,
+    aws_iam as iam,
+    aws_ec2 as ec2,
+    aws_redshiftserverless as redshiftserverless,
+    RemovalPolicy
+)
+from constructs import Construct
+
+class RedshiftServerlessStack(Stack):
+    def __init__(self, scope: Construct, construct_id: str, **kwargs):
+        super().__init__(scope, construct_id, **kwargs)
+
+        # Define or look up the specific VPC
+        vpc = ec2.Vpc.from_lookup(self, "VPC", vpc_id="YOUR_VPC_ID")
+
+        # Specify the subnet(s) for the Redshift serverless workgroup
+        selected_subnets = [subnet.subnet_id for subnet in vpc.select_subnets(subnet_group_name="YOUR_SUBNET_GROUP_NAME").subnets]
+
+        # Create an IAM role for Redshift Serverless
+        redshift_role = iam.Role(self, "RedshiftServerlessRole",
+                                 assumed_by=iam.ServicePrincipal("redshift-serverless.amazonaws.com"),
+                                 managed_policies=[
+                                     iam.ManagedPolicy.from_aws_managed_policy_name("AmazonRedshiftServerlessFullAccess")
+                                 ])
+
+        # Create the Redshift Serverless Namespace
+        namespace = redshiftserverless.CfnNamespace(self, "MyNamespace",
+                                                    admin_username="adminUsername",
+                                                    admin_user_password="StrongPassword123!",
+                                                    db_name="mydatabase",
+                                                    namespace_name="myNamespace",
+                                                    iam_roles=[redshift_role.role_arn])
+
+        # Create the Redshift Serverless Workgroup with the specified VPC and subnet
+        workgroup = redshiftserverless.CfnWorkgroup(
+            self, "MyWorkgroup",
+            workgroup_name="myWorkgroup",
+            namespace_name=namespace.ref,
+            enhanced_vpc_routing=True,
+            publicly_accessible=False,
+            subnet_ids=selected_subnets,
+            security_group_ids=["YOUR_SECURITY_GROUP_ID"]  # Specify the security group
+        )
+
+
+-------------
+  from aws_cdk import App
+from redshift_serverless_stack import RedshiftServerlessStack
+
+app = App()
+RedshiftServerlessStack(app, "RedshiftServerlessStack")
+app.synth()
+-----------
