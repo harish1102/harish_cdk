@@ -1,0 +1,61 @@
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": [
+                "redshift-serverless:CreateEndpointAccess",
+                "redshift-serverless:CreateNamespace",
+                "redshift-serverless:CreateSnapshot",
+                "redshift-serverless:CreateUsageLimit",
+                "redshift-serverless:CreateWorkgroup",
+                "redshift-serverless:GetCredentials",
+                "redshift-serverless:RestoreFromSnapshot"
+            ],
+            "Resource": "*"
+        },
+        {
+            "Effect": "Allow",
+            "Action": [
+                "iam:CreateServiceLinkedRole"
+            ],
+            "Resource": "*",
+            "Condition": {
+                "StringLike": {
+                    "iam:AWSServiceName": "redshift-serverless.amazonaws.com"
+                }
+            }
+        },
+        {
+            "Effect": "Allow",
+            "Action": [
+                "ec2:CreateVpcEndpoint"
+            ],
+            "Resource": "*",
+            "Condition": {
+                "StringEquals": {
+                    "ec2:ServiceName": "com.amazonaws.*.redshift-serverless"
+                }
+            }
+        },
+        {
+            "Effect": "Allow",
+            "Action": [
+                "s3:ListBucket",
+                "s3:GetObject",
+                "s3:PutObject"
+            ],
+            "Resource": [
+                "arn:aws:s3:::your-redshift-serverless-bucket",
+                "arn:aws:s3:::your-redshift-serverless-bucket/*"
+            ]
+        },
+        {
+            "Effect": "Allow",
+            "Action": [
+                "secretsmanager:GetSecretValue"
+            ],
+            "Resource": "arn:aws:secretsmanager:*:*:secret:your-redshift-credentials-*"
+        }
+    ]
+}
