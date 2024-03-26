@@ -1,0 +1,70 @@
+import string
+import random
+from aws_cdk import (
+    Stack,
+    aws_redshiftserverless as redshiftserverless,
+    aws_secretsmanager as secretsmanager,
+    aws_iam as iam,
+)
+from constructs import Construct
+
+class RedshiftServerlessStack(Stack):
+    def __init__(self, scope: Construct, construct_id: str, **kwargs):
+        super().__init__(scope, construct_id, **kwargs)
+
+        # Function to generate a name matching the pattern ^[a-z0-9-]+$
+        def generate_namespace_name(length=10):
+            characters = string.ascii_lowercase + string.digits + "-"
+            # Ensure the first character is not a hyphen
+            first_character = random.choice(string.ascii_lowercase + string.digits)
+            return first_character + ''.join(random.choice(characters) for _ in range(length - 1))
+
+        namespace_name = generate_namespace_name()
+        print(f"Generated Namespace Name: {namespace_name}")  # For demonstration purposes
+
+        # Proceed to create your resources using the generated name
+        # Example: Creating a Redshift Serverless Namespace with the generated name
+        namespace = redshiftserverless.CfnNamespace(
+            self, "MyNamespace",
+            namespace_name=namespace_name,
+            admin_username="adminuser",
+            admin_user_password="YourStrongPasswordHere",  # Consider using AWS Secrets Manager
+            db_name="mydatabase"
+        )
+
+        # Add other resources as needed, e.g., workgroups, using the namespace
+
+# Add the stack to your app.py or equivalent file
+app = App()
+RedshiftServerlessStack(app, "RedshiftServerlessStack")
+app.synth()
+======================
+&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+import re
+import random
+import string
+
+def generate_workgroup_name(length=10):
+    if length < 1:
+        raise ValueError("Length must be at least 1")
+    
+    # Characters allowed in the workgroup name
+    chars = string.ascii_lowercase + string.digits + '-'
+    
+    # Generate the initial workgroup name
+    workgroup_name = ''.join(random.choice(chars) for _ in range(length))
+    
+    # Ensure the name does not start or end with a hyphen as per AWS naming conventions
+    workgroup_name = workgroup_name.strip('-')
+    
+    # Verify the generated name matches the required pattern
+    pattern = re.compile("^[a-z0-9-]+$")
+    if not pattern.match(workgroup_name):
+        raise ValueError("Generated workgroup name does not match the required pattern.")
+    
+    return workgroup_name
+
+# Example usage:
+workgroup_name = generate_workgroup_name(10)
+print(f"Generated workgroup name: {workgroup_name}")
+======================================
