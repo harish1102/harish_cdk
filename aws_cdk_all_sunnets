@@ -1,0 +1,44 @@
+from aws_cdk import aws_ec2 as ec2, App, Stack
+from constructs import Construct
+
+class MyStack(Stack):
+    def __init__(self, scope: Construct, construct_id: str, **kwargs):
+        super().__init__(scope, construct_id, **kwargs)
+
+        vpc = ec2.Vpc(self, "MyVPC",
+                      max_azs=3,  # Adjust as needed
+                      )
+
+        # Getting all subnet IDs
+        all_subnet_ids = [subnet.subnet_id for subnet in vpc.public_subnets + vpc.private_subnets + vpc.isolated_subnets]
+
+        # Printing or using the subnet IDs
+        print(all_subnet_ids)
+
+app = App()
+MyStack(app, "MyStack")
+app.synth()
+&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+from aws_cdk import aws_ec2 as ec2, App, Stack
+from constructs import Construct
+
+class MyStack(Stack):
+    def __init__(self, scope: Construct, construct_id: str, **kwargs):
+        super().__init__(scope, construct_id, **kwargs)
+
+        # Importing an existing VPC by its ID
+        vpc = ec2.Vpc.from_lookup(self, "ExistingVPC", vpc_id="vpc-1234567890abcdef0")
+
+        # Alternatively, you can lookup by VPC name (tags)
+        # vpc = ec2.Vpc.from_lookup(self, "ExistingVPCByName", vpc_name="MyVpcName")
+
+        # Getting all subnet IDs
+        all_subnet_ids = [subnet.subnet_id for subnet in vpc.public_subnets + vpc.private_subnets + vpc.isolated_subnets]
+
+        # Printing or using the subnet IDs
+        print(all_subnet_ids)
+
+app = App()
+MyStack(app, "MyStack")
+app.synth()
+&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
