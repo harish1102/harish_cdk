@@ -1,0 +1,59 @@
+npm install -g aws-cdk
+cdk bootstrap
+---
+cdk init app --language python
+pip install aws-cdk-lib constructs
+---
+from aws_cdk import (
+    Stack,
+    aws_redshift as redshift,
+)
+from constructs import Construct
+
+class RedshiftServerlessStack(Stack):
+    def __init__(self, scope: Construct, id: str, **kwargs) -> None:
+        super().__init__(scope, id, **kwargs)
+
+        # Define the Redshift serverless cluster
+        cluster = redshift.CfnCluster(
+            self, "RedshiftServerlessCluster",
+            cluster_type="serverless",
+            namespace_name="example-namespace"
+        )
+---
+# datashare
+            # Data share
+            data_share = redshift.CfnDataShare(
+                self, "RedshiftDataShare",
+                name="MyDataShare",
+                producer_arn=cluster.attr_arn
+            )
+---
+#create database objects
+
+import psycopg2
+
+def create_tables():
+    conn = psycopg2.connect(
+        dbname="your_database_name", 
+        user="awsuser", 
+        password="your_password", 
+        port="your_port", 
+        host="your_cluster_endpoint"
+    )
+    cur = conn.cursor()
+    
+    # Create a sample table
+    cur.execute("""
+        CREATE TABLE sales (
+            id SERIAL PRIMARY KEY,
+            item VARCHAR(100),
+            quantity INT,
+            price NUMERIC
+        );
+    """)
+    conn.commit()
+    cur.close()
+    conn.close()
+----
+
