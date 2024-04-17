@@ -1,0 +1,27 @@
+pip install aws-cdk-lib
+pip install constructs
+----
+from aws_cdk import (
+    App, Stack, aws_ec2 as ec2, CfnOutput
+)
+from constructs import Construct
+
+class VpcLookupStack(Stack):
+    def __init__(self, scope: Construct, id: str, **kwargs):
+        super().__init__(scope, id, **kwargs)
+        
+        # Lookup an existing VPC by its ID or by tags
+        vpc = ec2.Vpc.from_lookup(self, "ImportedVPC",
+                                  vpc_id="vpc-xxxxxxxx",  # Use vpc_id or use tags to identify the VPC
+                                  # tags={"key": "value"}  # Optional: use tags to filter the VPC if vpc_id is not used
+                                 )
+        
+        # Output the VPC ID
+        CfnOutput(self, "VpcId",
+                  value=vpc.vpc_id,
+                  description="The ID of the VPC")
+
+app = App()
+VpcLookupStack(app, "VpcLookupStack")
+app.synth()
+----
