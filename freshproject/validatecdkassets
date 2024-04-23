@@ -1,0 +1,81 @@
+--azure-pipelines.yml--
+
+trigger:
+- main
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+stages:
+- stage: Build
+  jobs:
+  - job: BuildJob
+    steps:
+    - task: UsePythonVersion@0
+      inputs:
+        versionSpec: '3.8'
+        addToPath: true
+
+    - script: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        npm install -g aws-cdk
+      displayName: 'Install dependencies'
+
+    - script: |
+        cdk synth
+      displayName: 'Synthesize CDK template'
+
+    - task: PublishPipelineArtifact@1
+      inputs:
+        targetPath: 'cdk.out'
+        artifact: 'CDKTemplate'
+        publishLocation: 'pipeline'
+
+- stage: Validate
+  dependsOn: Build
+  jobs:
+  - job: ValidateJob
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+    - task: DownloadPipelineArtifact@2
+      inputs:
+        artifact: 'CDKTemplate'
+        path: 'cdk.out'
+
+    - script: |
+        find cdk.out -type f -name "*.template.json" | while read file; do
+          echo "Validating $file"
+          aws cloudformation validate-template --template-body file://$file
+          if [ $? -ne 0 ]; then
+            echo "Validation failed for $file"
+            exit 1
+          fi
+        done
+      displayName: 'Validate CloudFormation Templates'
+      env:
+        AWS_ACCESS_KEY_ID: $(AWSAccessKeyId)
+        AWS_SECRET_ACCESS_KEY: $(AWSSecretKey)
+        AWS_DEFAULT_REGION: 'us-west-2'
+
+- stage: Deploy
+  dependsOn: Validate
+  jobs:
+  - deployment: DeployJob
+    environment: 'development'
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+    - task: DownloadPipelineArtifact@2
+      inputs:
+        artifact: 'CDKTemplate'
+        path: 'cdk.out'
+
+    - script: |
+        cdk deploy --require-approval never
+      displayName: 'Deploy CDK Stack'
+      env:
+        AWS_ACCESS_KEY_ID: $(AWSAccessKeyId)
+        AWS_SECRET_ACCESS_KEY: $(AWSSecretKey)
+        AWS_DEFAULT_REGION: 'us-west-2'
