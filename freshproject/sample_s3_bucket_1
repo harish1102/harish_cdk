@@ -1,0 +1,80 @@
+--s3_bucket_stack.py--
+from aws_cdk import (
+    Stack,
+    aws_s3 as s3
+)
+from constructs import Construct
+
+class S3BucketStack(Stack):
+    def __init__(self, scope: Construct, id: str, **kwargs):
+        super().__init__(scope, id, **kwargs)
+
+        s3.Bucket(self, 
+                  "MySampleBucket",
+                  versioned=True,
+                  removal_policy=s3.RemovalPolicy.DESTROY)  # Use RETAIN  in production
+
+---
+--app.py--
+from aws_cdk import App
+from s3_bucket_stack import S3BucketStack
+
+app = App()
+S3BucketStack(app, "S3BucketStack")
+app.synth()
+----
+---azure-pipelines.yml---
+trigger:
+- main
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+stages:
+- stage: Build
+  jobs:
+  - job: BuildJob
+    steps:
+    - task: UsePythonVersion@0
+      inputs:
+        versionSpec: '3.8'
+        addToPath: true
+
+    - script: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        npm install -g aws-cdk
+      displayName: 'Install dependencies'
+
+    - script: |
+        cdk synth
+      displayName: 'Synthesize CDK template'
+
+    - task: PublishPipelineArtifact@1
+      inputs:
+        targetPath: 'cdk.out'
+        artifact: 'CDKTemplate'
+        publishLocation: 'pipeline'
+
+- stage: Deploy
+  dependsOn: Build
+  jobs:
+  - deployment: DeployJob
+    environment: 'development'
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+    - task: DownloadPipelineArtifact@2
+      inputs:
+        artifact: 'CDKTemplate'
+        path: 'cdk.out'
+
+    - script: |
+        cdk deploy --require-approval never
+      displayName: 'Deploy CDK Stack'
+      env:
+        AWS_ACCESS_KEY_ID: $(AWSAccessKeyId)
+        AWS_SECRET_ACCESS_KEY: $(AWSSecretKey)
+        AWS_DEFAULT_REGION: 'us-west-2'
+------
+
