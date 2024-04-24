@@ -1,0 +1,36 @@
+steps:
+- checkout: self
+  path: customDirectory
+========
+trigger:
+- main
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+steps:
+- checkout: self
+  path: customPathForRepo
+
+- script: |
+    echo "Repository files are stored in: $(Build.SourcesDirectory)/customPathForRepo"
+    ls -l $(Build.SourcesDirectory)/customPathForRepo
+  displayName: 'List repository files'
+=======
+resources:
+  repositories:
+  - repository: otherRepo
+    type: git
+    name: MyOrg/OtherRepo
+
+steps:
+- checkout: self  # Checkout the triggering repo
+- checkout: otherRepo
+  path: s/otherRepo
+
+- script: |
+    echo "Files from the main repository are in: $(Build.SourcesDirectory)"
+    echo "Files from the other repository are in: $(Build.SourcesDirectory)/otherRepo"
+    ls -l $(Build.SourcesDirectory)/otherRepo
+  displayName: 'List files from other repository'
+=======
