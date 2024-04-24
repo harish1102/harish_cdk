@@ -1,0 +1,28 @@
+trigger:
+- main
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+resources:
+  repositories:
+  - repository: utilitiesRepo  # Alias for the repository
+    type: git
+    name: MyOrganization/UtilityFiles  # Change to 'YourOrganization/YourRepo'
+    ref: refs/heads/main  # Optional: Specify the branch to use
+
+steps:
+- checkout: self
+- checkout: utilitiesRepo
+  path: s/utilitiesRepo
+
+- script: |
+    echo "Files from UtilityFiles repository are checked out."
+    ls s/utilitiesRepo  # List files to verify checkout
+  displayName: 'List Files from Repository'
+
+- script: |
+    echo "Using file from the remote repository..."
+    cat s/utilitiesRepo/config.txt  # Display contents of the file, for example
+  displayName: 'Use File in Task'
+--------
