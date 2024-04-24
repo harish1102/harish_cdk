@@ -1,0 +1,35 @@
+----
+resources:
+  repositories:
+  - repository: myConfigRepo  # Name this resource
+    type: git
+    name: MyProject/my-config-repo  # Replace with 'ProjectName/RepoName'
+
+steps:
+- checkout: self
+- checkout: myConfigRepo
+  path: myConfigRepo
+
+----
+steps:
+- checkout: self
+- checkout: myConfigRepo
+  path: myConfigRepo
+
+- script: |
+    set -a  # Automatically export all variables
+    source myConfigRepo/config.env
+    set +a
+    python3 my_script.py
+  displayName: 'Load Env and Run Python Script'
+  env:
+    # Add necessary environment variables for the script, if there are other dependencies
+----
+import os
+
+# Access the environment variables
+config_value = os.getenv('CONFIG_VALUE')
+
+print(f"The configuration value is: {config_value}")
+----
+
