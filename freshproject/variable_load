@@ -1,0 +1,59 @@
+---config.env---
+# config.env
+ENVIRONMENT=production
+DB_PASSWORD=example_password
+---
+---load_env.py
+from dotenv import load_dotenv
+import os
+
+def load_environment_variables():
+    # Load environment variables from a .env file
+    dotenv_path = os.path.join(os.path.dirname(__file__), 'config.env')
+    load_dotenv(dotenv_path)
+
+    # Check if variables are loaded (for debugging)
+    environment = os.getenv('ENVIRONMENT')
+    db_password = os.getenv('DB_PASSWORD')
+    print(f"Environment: {environment}, DB Password: {db_password}")
+
+# Optionally call the function to test when running this script directly
+if __name__ == "__main__":
+    load_environment_variables()
+
+
+----
+from aws_cdk import core as cdk
+import aws_cdk.aws_ec2 as ec2
+import os
+from load_env import load_environment_variables
+
+class MyCdkStack(cdk.Stack):
+    def __init__(self, scope: cdk.Construct, id: str, **kwargs):
+        super().__init__(scope, id, **kwargs)
+
+        # Load the environment variables
+        load_environment_variables()
+
+        # Retrieve environment variables
+        environment = os.getenv('ENVIRONMENT')
+        db_password = os.getenv('DB_PASSWORD')
+
+        # Use environment variables in your CDK resources
+        # Example: Provision an EC2 instance based on the environment
+        if environment == 'production':
+            instance_type = ec2.InstanceType.of(ec2.InstanceClass.BURSTABLE3, ec2.InstanceSize.MICRO)
+            ec2.Instance(self, "MyInstance",
+                         instance_type=instance_type,
+                         machine_image=ec2.MachineImage.latest_amazon_linux(),
+                         vpc=self.get_vpc())
+
+    def get_vpc(self):
+        # Assuming a VPC is created elsewhere or using a default VPC
+        return ec2.Vpc.from_lookup(self, "VPC", is_default=True)
+
+app = cdk.App()
+MyCdkStack(app, "MyCdkStack", env={'region': 'us-east-1'})
+app.synth()
+----
+
