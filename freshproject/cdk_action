@@ -1,0 +1,33 @@
+trigger:
+- main
+
+parameters:
+- name: deployEnvironment
+  displayName: Deployment Environment
+  type: string
+  default: development
+  values:
+  - production
+  - development
+
+pool:
+  vmImage: 'windows-latest'
+
+jobs:
+- job: Deploy
+  displayName: Deploy Job
+  steps:
+  - task: AzurePowerShell@5
+    displayName: Conditional Deployment Script
+    inputs:
+      azureSubscription: 'AzureServiceConnection'
+      ScriptType: 'InlineScript'
+      InlineScript: |
+        if ("${{ parameters.deployEnvironment }}" -eq "production") {
+          Write-Host "Deploying to production environment"
+          # Add your PowerShell commands for production deployment
+        } else {
+          Write-Host "Deploying to development environment"
+          # Add your PowerShell commands for development deployment
+        }
+      azurePowerShellVersion: 'Latest'
