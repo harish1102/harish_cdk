@@ -1,0 +1,50 @@
+from aws_cdk import (
+    Stack,
+    aws_redshift as redshift,
+    aws_redshiftserverless as redshiftserverless
+)
+from constructs import Construct
+
+class RedshiftDatashareStack(Stack):
+    def __init__(self, scope: Construct, id: str, **kwargs) -> None:
+        super().__init__(scope, id, **kwargs)
+
+        # Create two Redshift Serverless namespaces (databases)
+        namespace1 = redshiftserverless.CfnNamespace(
+            self, "MyNamespace1",
+            namespace_name="Namespace1",
+            admin_user_name="admin",
+            admin_user_password="Password1!",
+            db_name="Database1"
+        )
+
+        namespace2 = redshiftserverless.CfnNamespace(
+            self, "MyNamespace2",
+            namespace_name="Namespace2",
+            admin_user_name="admin",
+            admin_user_password="Password2!",
+            db_name="Database2"
+        )
+
+        # Create datashare (assuming Redshift Serverless supports it through CDK, if not use custom resource)
+        datashare = redshift.CfnDataShare(
+            self, "MyDataShare",
+            name="MyDataShare",
+            producer_arn=namespace1.attr_arn  # This attribute might need adjustment
+        )
+
+        # Associate datashare with the second namespace
+        # This is hypothetical; you might need to use AWS SDK or custom resources
+        redshift.CfnDataShareAssociation(
+            self, "DataShareAssociation",
+            data_share_arn=datashare.attr_arn,
+            consumer_arn=namespace2.attr_arn  # This attribute might need adjustment
+        )
+
+# in app.py or your main file
+from aws_cdk import App
+from redshift_stack import RedshiftDatashareStack
+
+app = App()
+RedshiftDatashareStack(app, "RedshiftDatashareStack")
+app.synth()
