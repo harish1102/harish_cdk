@@ -1,0 +1,59 @@
+from aws_cdk import (
+    aws_redshift as redshift,
+    aws_ec2 as ec2,
+    Stack,
+    RemovalPolicy
+)
+from constructs import Construct
+
+class RedshiftDataSharingStack(Stack):
+    def __init__(self, scope: Construct, id: str, **kwargs) -> None:
+        super().__init__(scope, id, **kwargs)
+
+        # Define a VPC (if not using an existing VPC)
+        vpc = ec2.Vpc(self, "RedshiftVpc", max_azs=2)
+
+        # Define the first Redshift serverless cluster
+        cluster1 = redshift.CfnCluster(
+            self, "RedshiftCluster1",
+            cluster_type="multi-node",
+            db_name="mydatabase1",
+            master_username="adminuser",
+            master_user_password="SuperSecret1!",
+            node_type="dc2.large",
+            number_of_nodes=2,
+            removal_policy=RemovalPolicy.DESTROY,  # Adjust the policy as needed
+            vpc=vpc
+        )
+
+        # Define the second Redshift serverless cluster
+        cluster2 = redshift.CfnCluster(
+            self, "RedshiftCluster2",
+            cluster_type="multi-node",
+            db_name="mydatabase2",
+            master_username="adminuser",
+            master_user_password="SuperSecret2!",
+            node_type="dc2.large",
+            number_of_nodes=2,
+            removal_policy=RemovalPolicy.DESTROY,  # Adjust the policy as needed
+            vpc=vpc
+        )
+
+        # Create a Redshift DataShare
+        datashare = redshift.CfnDataShare(
+            self, "RedshiftDataShare",
+            producer_arn=cluster1.attr_arn,
+            name="MyDataShare",
+            allow_publicly_accessible_consumers=True
+        )
+
+        # Associate the second cluster with the datashare
+        datashare_association = redshift.CfnDataShareAssociation(
+            self, "RedshiftDataShareAssociation",
+            data_share_arn=datashare.attr_arn,
+            consumer_arn=cluster2.attr_arn
+        )
+
+app = core.App()
+RedshiftDataSharingStack(app, "RedshiftDataSharingStack")
+app.synth()
