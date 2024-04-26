@@ -1,0 +1,37 @@
+from aws_cdk import (
+    Stack,
+    aws_kms as kms,
+    aws_redshiftserverless as redshiftserverless,
+    Tags
+)
+from constructs import Construct
+
+class RedshiftServerlessStack(Stack):
+    def __init__(self, scope: Construct, id: str, **kwargs) -> None:
+        super().__init__(scope, id, **kwargs)
+
+        # Create a KMS key for encrypting the Redshift Serverless database
+        kms_key = kms.Key(self, "RedshiftServerlessKMSKey",
+                          description="KMS Key for encrypting Redshift Serverless data",
+                          enable_key_rotation=True)
+
+        # Create a Redshift Serverless namespace (database) using the KMS key
+        namespace = redshiftserverless.CfnNamespace(
+            self, "MyRedshiftServerlessNamespace",
+            namespace_name="MyServerlessNamespace",
+            admin_user_name="admin",
+            admin_user_password="SuperSecurePassword123!",
+            kms_key_id=kms_key.key_id,
+            db_name="MyDatabase"
+        )
+
+        # Add tags to the Redshift Serverless namespace
+        Tags.of(namespace).add("createdby", "dba")
+
+# in app.py or your main file
+from aws_cdk import App
+from redshift_serverless_stack import RedshiftServerlessStack
+
+app = App()
+RedshiftServerlessStack(app, "RedshiftServerlessStack")
+app.synth()
