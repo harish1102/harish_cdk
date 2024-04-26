@@ -1,0 +1,46 @@
+-----
+cat config.py
+
+import os
+from dotenv import load_dotenv
+
+class Config:
+    def __init__(self):
+        load_dotenv()  # Load environment variables from a .env file
+        
+        # Environment variables can be accessed via os.getenv()
+        self.db_user = os.getenv("DB_USER", "default_user")  # Default values can be provided
+        self.db_password = os.getenv("DB_PASS", "default_password")
+
+# Create a global config object which can be imported elsewhere
+config = Config()
+-------
+cat main.py
+
+from config import config
+
+def main():
+    print(f"Database User: {config.db_user}")
+    print(f"Database Password: {config.db_password}")
+
+if __name__ == "__main__":
+    main()
+-------
+cat .env
+
+DB_USER=exampleuser
+DB_PASS=examplepassword
+-----
+#running 
+
+python main.py
+
+---
+#output
+
+Database User: exampleuser
+Database Password: examplepassword
+----
+
+
+
