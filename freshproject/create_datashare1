@@ -1,0 +1,48 @@
+Step 1: Create a Data Share on Producer Cluster
+
+aws redshift create-data-share \
+    --cluster-identifier producer-cluster-id \
+    --data-share-name MyDataShare
+
+######
+Step 2: Add Objects to Data Share
+
+aws redshift associate-data-share-consumer \
+    --data-share-arn "arn-of-data-share-created" \
+    --associate-entire-database true \ # or use --schemas to specify individual schemas
+    --cluster-identifier producer-cluster-id
+######
+Step 3: Share Data Share with Consumer Cluster
+
+aws redshift authorize-data-share \
+    --data-share-arn "arn-of-data-share-created" \
+    --consumer-identifier consumer-cluster-id \
+    --consumer-region us-west-2  # Example region, replace with your actual region
+####
+Step 4: Consumer Cluster - Accept Data Share
+aws redshift accept-data-share \
+    --data-share-arn "arn-of-data-share-created" \
+    --consumer-cluster-identifier consumer-cluster-id
+#####
+Step 5: Create Database from Shared Data Share
+
+aws redshift create-database-from-data-share \
+    --cluster-identifier consumer-cluster-id \
+    --db-name NewSharedDatabase \
+    --data-share-arn "arn-of-data-share-created"
+######
+Step 6: Create External Schema on Created Database
+
+aws redshift create-external-schema \
+    --cluster-identifier consumer-cluster-id \
+    --database-name NewSharedDatabase \
+    --schema-name ExternalSchema \
+    --data-catalog-source {
+        "CatalogName": "AwsDataCatalog",
+        "DatabaseName": "name-of-database-in-datashare"
+    }
+#######
+
+
+
+
