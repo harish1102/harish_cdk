@@ -1,0 +1,30 @@
+1. Namespace Management
+
+aws redshift-serverless create-namespace --namespace-name my-namespace --admin-user-name admin --admin-user-password 'YourPassword'
+aws redshift-serverless list-namespaces
+aws redshift-serverless get-namespace --namespace-name my-namespace
+aws redshift-serverless delete-namespace --namespace-name my-namespace
+aws redshift-serverless update-namespace --namespace-name my-namespace --admin-user-password 'NewPassword'
+----
+2. Workgroup Management
+
+aws redshift-serverless create-workgroup --namespace-name my-namespace --workgroup-name my-workgroup --base-capacity 32
+aws redshift-serverless list-workgroups --namespace-name my-namespace
+aws redshift-serverless get-workgroup --namespace-name my-namespace --workgroup-name my-workgroup
+aws redshift-serverless delete-workgroup --namespace-name my-namespace --workgroup-name my-workgroup
+aws redshift-serverless update-workgroup --namespace-name my-namespace --workgroup-name my-workgroup --base-capacity 64
+----
+3. Database Management
+
+aws redshift-serverless create-database --namespace-name my-namespace --db-name my-database
+aws redshift-serverless list-databases --namespace-name my-namespace
+aws redshift-serverless delete-database --namespace-name my-namespace --db-name my-database
+
+-----
+4. Snapshot Management
+
+aws redshift-serverless create-snapshot --namespace-name my-namespace --snapshot-name my-snapshot
+aws redshift-serverless list-snapshots --namespace-name my-namespace
+aws redshift-serverless restore-from-snapshot --namespace-name my-namespace --snapshot-name my-snapshot
+aws redshift-serverless delete-snapshot --namespace-name my-namespace --snapshot-name my-snapshot
+
