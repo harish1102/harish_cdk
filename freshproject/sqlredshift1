@@ -1,0 +1,69 @@
+import psycopg2
+
+# Function to retrieve a value from the database
+def fetch_initial_value():
+    # Connection string parameters
+    conn_params = {
+        "dbname": "your_dbname",
+        "user": "your_username",
+        "password": "your_password",
+        "host": "localhost",
+        "port": "5432"
+    }
+    try:
+        # Establishing the connection
+        conn = psycopg2.connect(**conn_params)
+        # Creating a cursor object using the cursor() method
+        cursor = conn.cursor()
+        
+        # Executing an SQL function to fetch a value
+        cursor.execute("SELECT max(id) FROM your_table;")
+        result = cursor.fetchone()  # Fetches the first row of a query result
+        
+        # Closing the connection
+        cursor.close()
+        conn.close()
+        
+        return result[0] if result else None
+    except psycopg2.DatabaseError as error:
+        print(f"Error: {error}")
+        return None
+
+# Function to use a value in another SQL statement
+def update_data_with_value(max_id):
+    if max_id is None:
+        print("No ID received to update data.")
+        return
+    
+    conn_params = {
+        "dbname": "your_dbname",
+        "user": "your_username",
+        "password": "your_password",
+        "host": "localhost",
+        "port": "5432"
+    }
+    try:
+        conn = psycopg2.connect(**conn_params)
+        cursor = conn.cursor()
+        
+        # Use the retrieved max_id to update some records
+        cursor.execute("UPDATE your_table SET column_name = %s WHERE id = %s;", ("new_value", max_id))
+        conn.commit()  # Commit the transaction
+        
+        print(f"Updated data for ID {max_id}.")
+        
+        cursor.close()
+        conn.close()
+    except psycopg2.DatabaseError as error:
+        print(f"Error during update: {error}")
+
+# Main function to orchestrate the flow
+def main():
+    max_id = fetch_initial_value()
+    if max_id is not None:
+        update_data_with_value(max_id)
+    else:
+        print("No valid ID found to perform update.")
+
+if __name__ == "__main__":
+    main()
