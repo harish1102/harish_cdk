@@ -1,0 +1,51 @@
+{
+    "constantBlock": {
+        "key1": "value1",
+        "key2": "value2",
+        "key3": "value3"
+    },
+    "otherBlock": {
+        "keyA": "valueA",
+        "keyB": "valueB"
+    }
+}
+----------
+import json
+
+def load_data_from_json(file_path, block_name):
+    """Load key-value pairs from a specified block in a JSON file."""
+    try:
+        # Open the JSON file and load its contents
+        with open(file_path, 'r') as file:
+            data = json.load(file)
+
+        # Extract the block by name
+        block_data = data[block_name]
+
+        # Optionally, convert to variables (dynamically, if necessary)
+        globals().update(block_data)
+
+        return block_data
+
+    except FileNotFoundError:
+        print("File not found.")
+        return None
+    except KeyError:
+        print(f"Block '{block_name}' not found in the JSON file.")
+        return None
+    except json.JSONDecodeError:
+        print("Error decoding JSON.")
+        return None
+
+# Example usage
+file_path = 'data.json'
+block_name = 'constantBlock'
+extracted_data = load_data_from_json(file_path, block_name)
+
+if extracted_data:
+    print(f"Extracted Data: {extracted_data}")
+    # Example of accessing variables if they were dynamically set
+    print(f"Key1's Value: {key1}")
+else:
+    print("No data extracted.")
+-------
