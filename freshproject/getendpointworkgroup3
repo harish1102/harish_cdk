@@ -1,0 +1,20 @@
+#!/bin/bash
+
+# Variables
+NAMESPACE_NAME="your-namespace-name"
+WORKGROUP_NAME="your-workgroup-name"
+
+# Fetching workgroup information
+echo "Retrieving endpoint information for Workgroup: $WORKGROUP_NAME in Namespace: $NAMESPACE_NAME"
+RESPONSE=$(aws redshift-serverless get-workgroup --namespace-name $NAMESPACE_NAME --workgroup-name $WORKGROUP_NAME)
+
+# Extracting the endpoint
+ENDPOINT=$(echo $RESPONSE | jq -r '.workgroup.endpoint.address')
+PORT=$(echo $RESPONSE | jq -r '.workgroup.endpoint.port')
+
+if [ "$ENDPOINT" != "null" ] && [ "$PORT" != "null" ]; then
+    echo "Endpoint: $ENDPOINT"
+    echo "Port: $PORT"
+else
+    echo "Failed to retrieve endpoint information."
+fi
