@@ -1,0 +1,18 @@
+#!/bin/bash
+
+# Define variables
+NAMESPACE_NAME="your-namespace-name"
+WORKGROUP_NAME="your-workgroup-name"
+
+# Execute AWS CLI command to retrieve workgroup information
+OUTPUT=$(aws redshift-serverless get-workgroup --namespace-name $NAMESPACE_NAME --workgroup-name $WORKGROUP_NAME)
+
+# Parse the output to extract the endpoint address
+ENDPOINT_ADDRESS=$(echo $OUTPUT | jq -r '.workgroup.endpoint.address')
+
+# Check and print the endpoint address
+if [ -z "$ENDPOINT_ADDRESS" ] || [ "$ENDPOINT_ADDRESS" == "null" ]; then
+    echo "No endpoint address found for the specified workgroup."
+else
+    echo "Endpoint Address: $ENDPOINT_ADDRESS"
+fi
