@@ -1,1 +1,62 @@
-hi
+import psycopg2
+
+# Database configuration
+config = {
+    'host': 'localhost',
+    'database': 'your_database_name',
+    'user': 'your_username',
+    'password': 'your_password',
+    'port': '5432'  # default PostgreSQL port
+}
+
+# Function to connect to the database
+def connect_to_db():
+    conn = psycopg2.connect(**config)
+    return conn
+
+# Function to get user ID
+def get_user_id(username):
+    conn = connect_to_db()
+    try:
+        with conn.cursor() as cur:
+            sql_query = "SELECT id FROM users WHERE username = %s;"
+            cur.execute(sql_query, (username,))
+            user_id = cur.fetchone()
+            return user_id[0] if user_id else None
+    except psycopg2.Error as e:
+        print(f"Database error: {e}")
+        return None
+    finally:
+        conn.close()
+
+# Function to get user details using user ID
+def get_user_details(user_id):
+    conn = connect_to_db()
+    try:
+        with conn.cursor() as cur:
+            sql_query = "SELECT * FROM user_details WHERE user_id = %s;"
+            cur.execute(sql_query, (user_id,))
+            details = cur.fetchall()
+            return details
+    except psycopg2.Error as e:
+        print(f"Database error: {e}")
+        return None
+    finally:
+        conn.close()
+
+# Main function to control the flow of the program
+def main():
+    username = 'exampleUser'
+    user_id = get_user_id(username)
+    if user_id:
+        print(f"User ID for {username}: {user_id}")
+        user_details = get_user_details(user_id)
+        if user_details:
+            print("User Details:", user_details)
+        else:
+            print("No details found for user.")
+    else:
+        print("User not found.")
+
+if __name__ == "__main__":
+    main()
