@@ -1,0 +1,37 @@
+import subprocess
+import json
+
+def get_redshift_serverless_endpoint(namespace_name, workgroup_name):
+    # Command to get workgroup details
+    command = [
+        'aws', 'redshift-serverless', 'get-workgroup',
+        '--namespace-name', namespace_name,
+        '--workgroup-name', workgroup_name
+    ]
+
+    # Run the command
+    try:
+        result = subprocess.run(command, check=True, text=True, capture_output=True)
+        # Parse the JSON output
+        data = json.loads(result.stdout)
+
+        # Extract the endpoint address
+        endpoint_address = data['workgroup']['endpoint']['address']
+        return endpoint_address
+
+    except subprocess.CalledProcessError as e:
+        print(f"Failed to execute command: {e}")
+        return None
+    except KeyError as e:
+        print(f"Error parsing data, key not found: {e}")
+        return None
+
+# Example usage
+namespace = "example-namespace"
+workgroup = "example-workgroup"
+endpoint = get_redshift_serverless_endpoint(namespace, workgroup)
+
+if endpoint:
+    print(f"Endpoint Address: {endpoint}")
+else:
+    print("No endpoint address found.")
