@@ -1,0 +1,23 @@
+import boto3
+from botocore.exceptions import ClientError
+
+def get_redshift_serverless_endpoint(namespace_name):
+    # Initialize a Redshift Serverless client
+    client = boto3.client('redshift-serverless')
+
+    try:
+        # Fetch namespace information
+        response = client.get_namespace(namespace_name=namespace_name)
+        
+        # Extract the endpoint information
+        endpoint = response['namespace']['endpoint']
+        print(f"Endpoint for namespace {namespace_name}: {endpoint}")
+
+    except ClientError as e:
+        print(f"An error occurred: {e}")
+        return None
+
+if __name__ == "__main__":
+    # Specify the namespace name you want to check
+    namespace_name = 'your-namespace-name'
+    get_redshift_serverless_endpoint(namespace_name)
