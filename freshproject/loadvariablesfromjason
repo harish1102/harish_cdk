@@ -1,0 +1,32 @@
+import json
+
+# Define the path to the JSON file
+json_file_path = 'data.json'
+
+# Function to load and parse the JSON file
+def load_json_data(filepath):
+    try:
+        # Open the file and load the JSON data
+        with open(filepath, 'r') as file:
+            data = json.load(file)
+
+        # Assign values to variables
+        name = data.get('name', 'Default Name')  # Provide a default value in case 'name' key doesn't exist
+        age = data.get('age', 0)  # Provide a default value in case 'age' key doesn't exist
+        email = data.get('email', 'no-reply@example.com')  # Provide a default value in case 'email' key doesn't exist
+
+        return name, age, email
+
+    except FileNotFoundError:
+        print(f"Error: The file '{filepath}' does not exist.")
+        return None, None, None
+    except json.JSONDecodeError:
+        print("Error: Failed to decode JSON.")
+        return None, None, None
+
+# Call the function and print the variables
+name, age, email = load_json_data(json_file_path)
+if name is not None:
+    print(f"Name: {name}")
+    print(f"Age: {age}")
+    print(f"Email: {email}")
