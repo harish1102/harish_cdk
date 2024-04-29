@@ -1,0 +1,35 @@
+import boto3
+from botocore.exceptions import NoCredentialsError, PartialCredentialsError, ClientError
+
+def get_redshift_serverless_endpoint(namespace_name, workgroup_name):
+    # Create a Redshift Serverless client
+    client = boto3.client('redshift-serverless')
+
+    try:
+        # Fetch workgroup details
+        response = client.get_workgroup(namespaceName=namespace_name, workgroupName=workgroup_name)
+
+        # Extract endpoint information
+        endpoint = response['workgroup']['endpoint']
+        return endpoint
+
+    except NoCredentialsError:
+        print("Credentials not available")
+        return None
+    except PartialCredentialsError:
+        print("Incomplete credentials")
+        return None
+    except ClientError as e:
+        print(f"An error occurred: {e}")
+        return None
+
+# Example usage
+namespace_name = 'your-namespace-name'
+workgroup_name = 'your-workgroup-name'
+endpoint = get_redshift_serverless_endpoint(namespace_name, workgroup_name)
+
+if endpoint:
+    print(f"Endpoint for {workgroup_name}: {endpoint}")
+else:
+    print("Failed to retrieve endpoint information.")
+
