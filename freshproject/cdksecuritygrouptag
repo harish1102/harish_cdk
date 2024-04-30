@@ -1,0 +1,52 @@
+from aws_cdk import (
+    Stack,
+    aws_ec2 as ec2,
+    Tags
+)
+from constructs import Construct
+
+class SecurityGroupStack(Stack):
+    def __init__(self, scope: Construct, id: str, **kwargs):
+        super().__init__(scope, id, **kwargs)
+
+        # Define VPC - assuming using default VPC for the simplicity of this example
+        vpc = ec2.Vpc.from_lookup(self, "VPC", is_default=True)
+
+        # Create a security group
+        sg = ec2.SecurityGroup(
+            self, "MySecurityGroup",
+            vpc=vpc,
+            security_group_name="MyCustomSG",
+            description="Security group with specific inbound and outbound rules",
+        )
+
+        # Define inbound rules
+        sg.add_ingress_rule(
+            peer=ec2.Peer.any_ipv4(),
+            connection=ec2.Port.tcp(22),
+            description="Allow SSH access from any IPv4 address"
+        )
+        sg.add_ingress_rule(
+            peer=ec2.Peer.any_ipv6(),
+            connection=ec2.Port.tcp(443),
+            description="Allow HTTPS access from any IPv6 address"
+        )
+
+        # Define outbound rules
+        sg.add_egress_rule(
+            peer=ec2.Peer.any_ipv4(),
+            connection=ec2.Port.all_tcp(),
+            description="Allow all outbound TCP connections"
+        )
+
+        # Apply mandatory tags using ec2:RequestTag and ec2:ResourceTag
+        Tags.of(sg).add("Project", "MyProject")
+        Tags.of(sg).add("Environment", "Production")
+
+# Add this stack to your app.py or the main deployment script
+from aws_cdk import App
+from security_group_stack import SecurityGroupStack
+
+app = App()
+SecurityGroupStack(app, "SecurityGroupStack")
+app.synth()
