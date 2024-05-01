@@ -1,0 +1,14 @@
+jobs:
+- job: ValidateParameter
+  displayName: 'Validate Parameter'
+  pool:
+    vmImage: 'ubuntu-latest'
+  steps:
+  - bash: |
+      if [ "${{ parameters.continueRun }}" == "no" ]; then
+        echo "Parameter check failed: continueRun is set to 'no'. Exiting pipeline."
+        exit 1
+      else
+        echo "Parameter check passed: continueRun is set to 'yes'. Continuing..."
+      fi
+    displayName: 'Check continueRun Parameter'
