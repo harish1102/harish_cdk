@@ -1,0 +1,50 @@
+from aws_cdk import (
+    Stack,
+    aws_iam as iam
+)
+from constructs import Construct
+
+class IAMRoleStack(Stack):
+    def __init__(self, scope: Construct, construct_id: str, **kwargs):
+        super().__init__(scope, construct_id, **kwargs)
+
+        # Create IAM Role
+        role = iam.Role(self, "MyIAMRole",
+            assumed_by=iam.ServicePrincipal("ec2.amazonaws.com"),
+            description="A role for EC2 with inline policies"
+        )
+
+        # Inline Policy Document
+        policy_document = iam.PolicyDocument(statements=[
+            iam.PolicyStatement(
+                actions=["s3:ListBucket"],
+                resources=["arn:aws:s3:::example-bucket"],
+                effect=iam.Effect.ALLOW
+            ),
+            iam.PolicyStatement(
+                actions=["s3:GetObject", "s3:PutObject"],
+                resources=["arn:aws:s3:::example-bucket/*"],
+                effect=iam.Effect.ALLOW
+            )
+        ])
+
+        # Attach Inline Policy to the Role
+        role.add_to_policy(iam.PolicyStatement(
+            actions=["dynamodb:GetItem", "dynamodb:PutItem"],
+            resources=["arn:aws:dynamodb:region:account-id:table/example-table"],
+            effect=iam.Effect.ALLOW
+        ))
+
+        # Another way to attach a specific inline policy
+        inline_policy = iam.Policy(self, "MyInlinePolicy",
+            document=policy_document
+        )
+        role.attach_inline_policy(inline_policy)
+
+# Add this stack to your app.py or the main deployment script
+from aws_cdk import App
+from iam_stack import IAMRoleStack
+
+app = App()
+IAMRoleStack(app, "IAMRoleStack")
+app.synth()
