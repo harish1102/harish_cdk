@@ -1,0 +1,19 @@
+if condition:
+    vpc = ec2.Vpc(self, "MyConditionalVPC")
+else:
+    vpc = ec2.Vpc(self, "MyDefaultVPC")
+---------
+class MyStack(Stack):
+    def __init__(self, scope: Construct, id: str, **kwargs):
+        super().__init__(scope, id, **kwargs)
+
+        self.vpc = self.create_vpc()
+
+    def create_vpc(self):
+        return ec2.Vpc(self, "MyVPC")
+
+    def use_vpc(self):
+        ec2_instance = ec2.Instance(self, "MyInstance",
+                                    instance_type=ec2.InstanceType("t3.micro"),
+                                    machine_image=ec2.MachineImage.latest_amazon_linux(),
+                                    vpc=self.vpc)  # Using an attribute of the class
