@@ -1,0 +1,35 @@
+from aws_cdk import (
+    aws_iam as iam,
+    Stack
+)
+from constructs import Construct
+
+class KMSIAMRoleStack(Stack):
+    def __init__(self, scope: Construct, construct_id: str, **kwargs):
+        super().__init__(scope, construct_id, **kwargs)
+
+        # Create an IAM Role
+        kms_role = iam.Role(self, "KMSManagementRole",
+            assumed_by=iam.ServicePrincipal("ec2.amazonaws.com"),
+            description="Role with permissions to manage all KMS keys"
+        )
+
+        # Policy Document granting permissions to manage KMS keys
+        kms_policy = iam.PolicyStatement(
+            actions=[
+                "kms:*"
+            ],
+            resources=["*"],
+            effect=iam.Effect.ALLOW
+        )
+
+        # Add Policy Statement to the Role
+        kms_role.add_to_policy(kms_policy)
+
+# Add this stack to your app.py or the main deployment script
+from aws_cdk import App
+from kms_iam_stack import KMSIAMRoleStack
+
+app = App()
+KMSIAMRoleStack(app, "KMSIAMRoleStack")
+app.synth()
