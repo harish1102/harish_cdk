@@ -1,0 +1,43 @@
+from aws_cdk import (
+    aws_iam as iam,
+    Stack,
+)
+from constructs import Construct
+
+class IAMRolePoliciesStack(Stack):
+    def __init__(self, scope: Construct, id: str, **kwargs):
+        super().__init__(scope, id, **kwargs)
+
+        # Create an IAM Role
+        role = iam.Role(self, "MyIAMRole",
+            assumed_by=iam.ServicePrincipal("lambda.amazonaws.com"),
+            description="Role for Lambda"
+        )
+
+        # Attach an AWS managed policy
+        role.add_managed_policy(iam.ManagedPolicy.from_aws_managed_policy_name("AmazonDynamoDBFullAccess"))
+
+        # Define and attach an inline policy
+        inline_policy_document = iam.PolicyDocument(
+            statements=[
+                iam.PolicyStatement(
+                    actions=["logs:CreateLogGroup", "logs:CreateLogStream", "logs:PutLogEvents"],
+                    resources=["arn:aws:logs:*:*:*"],
+                    effect=iam.Effect.ALLOW
+                )
+            ]
+        )
+
+        # Attach the inline policy to the role
+        inline_policy = iam.Policy(self, "InlinePolicy",
+            document=inline_policy_document
+        )
+        role.attach_inline_policy(inline_policy)
+
+# Add this stack to your app.py or the main deployment script
+from aws_cdk import App
+from iam_role_policies_stack import IAMRolePoliciesStack
+
+app = App()
+IAMRolePoliciesStack(app, "IAMRolePoliciesStack")
+app.synth()
