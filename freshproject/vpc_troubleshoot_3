@@ -1,0 +1,30 @@
+from aws_cdk import (
+    Stack,
+    aws_ec2 as ec2,
+)
+from constructs import Construct
+import logging
+
+class VpcStack(Stack):
+    def __init__(self, scope: Construct, id: str, **kwargs):
+        super().__init__(scope, id, **kwargs)
+
+        vpc_id = "vpc-1234567890abcdef0"  # Example VPC ID, replace with your actual VPC ID
+
+        # Try to fetch the VPC using from_lookup
+        try:
+            vpc = ec2.Vpc.from_lookup(self, "ImportedVPC", vpc_id=vpc_id)
+        except Exception as e:
+            logging.error(f"Failed to look up VPC with ID {vpc_id}: {e}")
+            raise
+
+        # Use the VPC for further resources or outputs
+        print(f"Using VPC with ID: {vpc.vpc_id}")
+
+# Add this stack to your app.py or the main deployment script
+from aws_cdk import App
+from vpc_stack import VpcStack
+
+app = App()
+VpcStack(app, "VpcStack")
+app.synth()
