@@ -1,0 +1,64 @@
+import psycopg2
+
+def create_redshift_table():
+    # Database connection parameters
+    host = 'your-redshift-cluster-endpoint'
+    port = '5439'  # Default Redshift port
+    dbname = 'your-database-name'
+    user = 'your-username'
+    password = 'your-password'
+
+    # Connection string
+    conn_string = f"host={host} port={port} dbname={dbname} user={user} password={password}"
+    
+    # SQL command to create a table
+    create_table_sql = """
+    CREATE TABLE IF NOT EXISTS example_table (
+        id INTEGER PRIMARY KEY,
+        name VARCHAR(30),
+        age INTEGER
+    );
+    """
+    
+    # Connect to the Redshift database
+    try:
+        conn = psycopg2.connect(conn_string)
+        cur = conn.cursor()
+        
+        # Execute the create table command
+        cur.execute(create_table_sql)
+        conn.commit()  # Commit the transaction
+        print("Table created successfully in Redshift.")
+        
+    except Exception as e:
+        print(f"An error occurred: {e}")
+    finally:
+        if conn:
+            cur.close()
+            conn.close()
+
+if __name__ == "__main__":
+    create_redshift_table()
+----------
+trigger:
+- main
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+steps:
+- script: |
+    python -m venv venv
+    . venv/bin/activate
+    pip install psycopg2-binary
+  displayName: 'Install psycopg2'
+
+- task: AmazonWebServices.aws-vsts-tools.AWSShellScript@1
+  inputs:
+    awsCredentials: 'YourAWSServiceConnection'
+    regionName: 'us-east-1'
+    scriptType: 'inline'
+    workingDirectory: '$(Build.SourcesDirectory)'
+    inlineScript: |
+      python create_table.py
+  displayName: 'Execute Python Script in AWS'
