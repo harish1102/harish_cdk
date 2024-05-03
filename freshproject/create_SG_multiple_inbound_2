@@ -1,0 +1,40 @@
+from aws_cdk import (
+    aws_ec2 as ec2,
+    Stack,
+)
+from constructs import Construct
+
+class SecurityGroupStack(Stack):
+    def __init__(self, scope: Construct, construct_id: str, **kwargs):
+        super().__init__(scope, construct_id, **kwargs)
+
+        # Define a VPC (assuming there's an existing VPC you want to use; otherwise, you can create a new one)
+        vpc = ec2.Vpc(self, "VPC", max_azs=3)  # Modify or fetch an existing VPC as needed
+
+        # Create a security group within the VPC
+        sg = ec2.SecurityGroup(self, "RedshiftSG",
+            vpc=vpc,
+            description="Allow Redshift access from specific subnets",
+            security_group_name="RedshiftSecurityGroup"
+        )
+
+        # Add inbound rules to the security group
+        sg.add_ingress_rule(
+            peer=ec2.Peer.ipv4('192.168.4.0/24'),
+            connection=ec2.Port.tcp(5439),
+            description="Inbound access from 192.168.4.0/24 on port 5439"
+        )
+
+        sg.add_ingress_rule(
+            peer=ec2.Peer.ipv4('192.168.5.0/24'),
+            connection=ec2.Port.tcp(5439),
+            description="Inbound access from 192.168.5.0/24 on port 5439"
+        )
+
+# Add this stack to your app.py or the main deployment script
+from aws_cdk import App
+from security_group_stack import SecurityGroupStack
+
+app = App()
+SecurityGroupStack(app, "SecurityGroupStack")
+app.synth()
