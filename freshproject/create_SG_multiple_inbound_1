@@ -1,0 +1,50 @@
+from aws_cdk import (
+    aws_ec2 as ec2,
+    Stack,
+)
+from constructs import Construct
+
+class SecurityGroupStack(Stack):
+    def __init__(self, scope: Construct, id: str, **kwargs):
+        super().__init__(scope, id, **kwargs)
+
+        # Define a VPC (Assuming there is an existing VPC or you can create one)
+        vpc = ec2.Vpc(self, "MyVPC",
+            max_azs=3  # Simple configuration with 3 Availability Zones
+        )
+
+        # Create a Security Group within the VPC
+        sg = ec2.SecurityGroup(self, "MySecurityGroup",
+            vpc=vpc,
+            description="Allow SSH, HTTP, and HTTPS traffic",
+            security_group_name="MySecurityGroup"
+        )
+
+        # Add SSH inbound rule
+        sg.add_ingress_rule(
+            peer=ec2.Peer.any_ipv4(),
+            connection=ec2.Port.tcp(22),
+            description="Allow SSH access from anywhere"
+        )
+
+        # Add HTTP inbound rule
+        sg.add_ingress_rule(
+            peer=ec2.Peer.any_ipv4(),
+            connection=ec2.Port.tcp(80),
+            description="Allow HTTP access from anywhere"
+        )
+
+        # Add HTTPS inbound rule
+        sg.add_ingress_rule(
+            peer=ec2.Peer.any_ipv4(),
+            connection=ec2.Port.tcp(443),
+            description="Allow HTTPS access from anywhere"
+        )
+
+# Add this stack to your app.py or the main deployment script
+from aws_cdk import App
+from security_group_stack import SecurityGroupStack
+
+app = App()
+SecurityGroupStack(app, "SecurityGroupStack")
+app.synth()
