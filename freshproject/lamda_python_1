@@ -1,0 +1,86 @@
+import json
+import boto3
+
+def main(event, context):
+    redshift_data = boto3.client('redshift-data')
+    sql_statement = 'CREATE TABLE sample_table(id INT, name VARCHAR);'
+
+    try:
+        response = redshift_data.execute_statement(
+            Database=event['DATABASE_NAME'],
+            SecretArn=event['SECRET_ARN'],
+            Sql=sql_statement,
+            ClusterIdentifier=event['CLUSTER_ARN']
+        )
+        return {
+            'statusCode': 200,
+            'body': json.dumps('Table created successfully!')
+        }
+    except Exception as e:
+        print(e)
+        raise e
+
+
+
+--------
+from aws_cdk import (
+    Stack, aws_redshift as redshift, aws_ec2 as ec2, aws_iam as iam, aws_lambda as lambda_,
+    aws_lambda_event_sources as lambda_events, aws_secretsmanager as secretsmanager,
+    CustomResource, Duration
+)
+from constructs import Construct
+
+class RedshiftStack(Stack):
+    def __init__(self, scope: Construct, id: str, **kwargs):
+        super().__init__(scope, id, **kwargs)
+
+        # Define the VPC
+        vpc = ec2.Vpc(self, "RedshiftVPC")
+
+        # Create a Redshift cluster
+        cluster = redshift.Cluster(self, "RedshiftCluster",
+            master_user=redshift.Login(
+                master_username='admin',
+                master_password=secretsmanager.SecretValue.secrets_manager("redshift-cluster-secret").to_string()
+            ),
+            vpc=vpc,
+            roles=[],
+            default_database_name="dev"
+        )
+
+        # Define an IAM role for Lambda
+        lambda_role = iam.Role(self, "LambdaExecutionRole",
+            assumed_by=iam.ServicePrincipal("lambda.amazonaws.com"),
+            managed_policies=[iam.ManagedPolicy.from_aws_managed_policy_name("service-role/AWSLambdaVPCAccessExecutionRole"),
+                              iam.ManagedPolicy.from_aws_managed_policy_name("service-role/AWSLambdaBasicExecutionRole")]
+        )
+
+        # Grant the Lambda function permissions to access the Redshift cluster
+        cluster.grant_data_api_access(lambda_role)
+
+        # Define the Lambda function
+        setup_lambda = lambda_.Function(self, "SetupLambda",
+            runtime=lambda_.Runtime.PYTHON_3_8,
+            handler="handler.main",
+            code=lambda_.Code.from_asset("path_to_lambda_code"),
+            environment={
+                "CLUSTER_ARN": cluster.cluster_arn,
+                "DATABASE_NAME": "dev",
+                "SECRET_ARN": cluster.secret.secret_arn
+            },
+            vpc=vpc,
+            role=lambda_role
+        )
+
+        # Create the sample table using a custom resource
+        CustomResource(self, "CreateSampleTable",
+            service_token=setup_lambda.function_arn
+        )
+
+# Add this stack to your app.py or the main deployment script
+from aws_cdk import App
+from redshift_stack import RedshiftStack
+
+app = App()
+RedshiftStack(app, "RedshiftStack")
+app.synth()
