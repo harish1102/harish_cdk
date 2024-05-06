@@ -1,0 +1,22 @@
+-- Create a new database (if needed)
+CREATE DATABASE mydb;
+
+-- Connect to the database (this command might differ based on your SQL client)
+\c mydb
+
+-- Create a new schema
+CREATE SCHEMA my_schema;
+
+-- Create a role
+CREATE ROLE my_role WITH LOGIN PASSWORD 'very_strong_password';
+
+-- Grant usage on the schema to the role
+GRANT USAGE ON SCHEMA my_schema TO my_role;
+
+-- Grant select privileges on all tables in the schema (current and future)
+GRANT SELECT ON ALL TABLES IN SCHEMA my_schema TO my_role;
+ALTER DEFAULT PRIVILEGES IN SCHEMA my_schema GRANT SELECT ON TABLES TO my_role;
+
+-- Optionally, create a specific user and assign the role
+CREATE USER my_user WITH PASSWORD 'another_strong_password';
+GRANT my_role TO my_user;
