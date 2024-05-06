@@ -1,0 +1,71 @@
+import json
+import boto3
+import psycopg2
+
+def get_secret(secret_name, region_name):
+    """Retrieve secrets from AWS Secrets Manager."""
+    session = boto3.session.Session()
+    client = session.client(service_name='secretsmanager', region_name=region_name)
+
+    try:
+        response = client.get_secret_value(SecretId=secret_name)
+    except Exception as e:
+        print(f"Error retrieving secret: {e}")
+        return None
+    
+    secret = json.loads(response['SecretString'])
+    return secret
+
+def connect_to_redshift(host, port, dbname, user, password):
+    """Connect to Redshift database using credentials."""
+    try:
+        conn = psycopg2.connect(
+            dbname=dbname, user=user, password=password, host=host, port=port
+        )
+        conn.autocommit = True  # Enable autocommit
+        return conn
+    except Exception as e:
+        print(f"Error connecting to Redshift: {e}")
+        return None
+
+def execute_sql_commands(conn, sql_commands):
+    """Execute multiple SQL commands from a list."""
+    try:
+        cur = conn.cursor()
+        for command in sql_commands:
+            cur.execute(command)
+            print(f"Executed: {command}")
+        cur.close()
+    except Exception as e:
+        print(f"Error executing SQL command: {e}")
+
+def main():
+    secret_name = "your-secret-name"  # AWS Secrets Manager secret name
+    region_name = "your-region"  # Your AWS region
+
+    # Get database connection details from Secrets Manager
+    secret = get_secret(secret_name, region_name)
+    if not secret:
+        return
+
+    # Connect to the database
+    conn = connect_to_redshift(secret['host'], secret['port'], secret['dbname'], secret['username'], secret['password'])
+    if not conn:
+        return
+
+    # List of SQL commands to execute
+    sql_commands = [
+        "DROP TABLE IF EXISTS test_table;",
+        "CREATE TABLE test_table (id SERIAL PRIMARY KEY, name VARCHAR(100));",
+        "INSERT INTO test_table (name) VALUES ('Alice'), ('Bob'), ('Charlie');",
+        "SELECT * FROM test_table;"
+    ]
+
+    # Execute SQL commands
+    execute_sql_commands(conn, sql_commands)
+
+    # Close the database connection
+    conn.close()
+
+if __name__ == "__main__":
+    main()
