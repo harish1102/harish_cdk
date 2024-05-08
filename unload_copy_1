@@ -1,0 +1,54 @@
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": [
+                "s3:ListBucket",
+                "s3:GetBucketLocation"
+            ],
+            "Resource": [
+                "arn:aws:s3:::your-bucket-name"
+            ]
+        },
+        {
+            "Effect": "Allow",
+            "Action": [
+                "s3:PutObject",
+                "s3:GetObject",
+                "s3:DeleteObject"
+            ],
+            "Resource": [
+                "arn:aws:s3:::your-bucket-name/*"
+            ]
+        },
+        {
+            "Effect": "Allow",
+            "Action": [
+                "redshift:Describe*",
+                "redshift:GetClusterCredentials"
+            ],
+            "Resource": [
+                "*"
+            ]
+        },
+        {
+            "Effect": "Allow",
+            "Action": [
+                "kms:Decrypt",
+                "kms:Encrypt",
+                "kms:ReEncrypt*",
+                "kms:GenerateDataKey*",
+                "kms:DescribeKey"
+            ],
+            "Resource": [
+                "arn:aws:kms:your-region:your-account-id:key/your-key-id"
+            ],
+            "Condition": {
+                "StringEquals": {
+                    "kms:ViaService": "redshift.your-region.amazonaws.com"
+                }
+            }
+        }
+    ]
+}
