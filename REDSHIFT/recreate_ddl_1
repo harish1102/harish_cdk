@@ -1,0 +1,57 @@
+SELECT
+    'CREATE USER ' || usename || ' WITH PASSWORD ' || 'xxxxxx' || ';' as create_user_statement
+FROM
+    pg_user;
+-----
+SELECT
+    'CREATE SCHEMA ' || nspname || ';' as create_schema_statement
+FROM
+    pg_namespace
+WHERE
+    nspname NOT IN ('pg_catalog', 'information_schema', 'public');
+-----
+-- Grants on schemas
+SELECT
+    'GRANT ' || privilege_type || ' ON SCHEMA ' || schemaname || ' TO ' || grantee || ';' as schema_grant_statement
+FROM
+    information_schema.schema_privileges
+WHERE
+    schemaname NOT IN ('pg_catalog', 'information_schema', 'public');
+
+-- For simplicity, only schema-level grants are shown. Extend this for tables, views, etc.
+-------
+import psycopg2
+
+# Database connection parameters
+conn = psycopg2.connect(dbname='your_dbname', host='your_host', port='your_port', user='your_user', password='your_password')
+
+def run_query(query):
+    with conn.cursor() as cur:
+        cur.execute(query)
+        return cur.fetchall()
+
+def generate_ddl():
+    with open('redshift_ddl_output.sql', 'w') as f:
+        # Users
+        users = run_query("SELECT 'CREATE USER ' || usename || ' WITH PASSWORD ''xxxxxx'';' FROM pg_user;")
+        for user in users:
+            f.write(user[0] + '\n')
+
+        # Schemas
+        schemas = run_query("SELECT 'CREATE SCHEMA ' || nspname || ';' FROM pg_namespace WHERE nspname NOT IN ('pg_catalog', 'information_schema', 'public');")
+        for schema in schemas:
+            f.write(schema[0] + '\n')
+
+        # Schema-level grants
+        schema_grants = run_query("""
+            SELECT 'GRANT ' || privilege_type || ' ON SCHEMA ' || schemaname || ' TO ' || grantee || ';' 
+            FROM information_schema.schema_privileges 
+            WHERE schemaname NOT IN ('pg_catalog', 'information_schema', 'public');
+        """)
+        for grant in schema_grants:
+            f.write(grant[0] + '\n')
+
+if __name__ == "__main__":
+    generate_ddl()
+    print("DDL extraction complete.")
+------
