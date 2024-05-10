@@ -1,0 +1,37 @@
+from aws_cdk import (
+    aws_s3 as s3,
+    aws_iam as iam,
+    Stack,
+    RemovalPolicy
+)
+from constructs import Construct
+
+class S3BucketWithPolicyStack(Stack):
+    def __init__(self, scope: Construct, id: str, **kwargs):
+        super().__init__(scope, id, **kwargs)
+
+        # Create an S3 bucket
+        bucket = s3.Bucket(self, "MyS3Bucket",
+            bucket_name="my-unique-bucket-name-12345",  # Ensure the bucket name is globally unique
+            removal_policy=RemovalPolicy.DESTROY,       # Adjust this policy based on your environment
+            auto_delete_objects=True                    # Use with caution in production
+        )
+
+        # Specify the ARN of the existing IAM role
+        role_arn = "arn:aws:iam::123456789012:role/MyCustomRole"
+
+        # Create a bucket policy
+        bucket_policy = iam.PolicyStatement(
+            actions=["s3:GetObject", "s3:PutObject"],
+            resources=[bucket.bucket_arn, f"{bucket.bucket_arn}/*"],
+            principals=[iam.ArnPrincipal(role_arn)]
+        )
+
+        # Attach the policy to the bucket
+        bucket.add_to_resource_policy(bucket_policy)
+
+# Set up the app and stack
+from aws_cdk import App
+app = App()
+S3BucketWithPolicyStack(app, "S3BucketWithPolicyStack")
+app.synth()
