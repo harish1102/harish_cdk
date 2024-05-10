@@ -1,0 +1,30 @@
+from aws_cdk import (
+    aws_s3 as s3,
+    Stack,
+    RemovalPolicy,
+    CfnOutput
+)
+from constructs import Construct
+
+class S3BucketWithDynamicNameStack(Stack):
+    def __init__(self, scope: Construct, id: str, dynamic_part: str, **kwargs):
+        super().__init__(scope, id, **kwargs)
+
+        # Construct the bucket name with a dynamic portion
+        bucket_name = f"my-bucket-{dynamic_part}-{self.account}"
+
+        # Create an S3 bucket with a partially dynamic name
+        bucket = s3.Bucket(self, "DynamicNameBucket",
+            bucket_name=bucket_name,
+            removal_policy=RemovalPolicy.DESTROY,  # Adjust this policy for production environments
+        )
+
+        # Output the bucket name
+        CfnOutput(self, "BucketName", value=bucket.bucket_name)
+
+# Set up the app and stack
+from aws_cdk import App
+app = App()
+S3BucketWithDynamicNameStack(app, "S3BucketWithDynamicNameStack", dynamic_part="unique-part")
+app.synth()
+------
