@@ -1,0 +1,35 @@
+from aws_cdk import (
+    aws_s3 as s3,
+    aws_iam as iam,
+    Stack,
+    RemovalPolicy
+)
+from constructs import Construct
+
+class S3RedshiftAccessStack(Stack):
+    def __init__(self, scope: Construct, construct_id: str, **kwargs):
+        super().__init__(scope, construct_id, **kwargs)
+
+        # Create an S3 bucket
+        bucket = s3.Bucket(self, "RedshiftAccessBucket",
+            removal_policy=RemovalPolicy.DESTROY, # adjust this policy for production environments
+            auto_delete_objects=True # be cautious with this setting in production
+        )
+
+        # Define a bucket policy that grants Redshift full access
+        policy_statement = iam.PolicyStatement(
+            actions=["s3:*"], # Grants full S3 access; consider narrowing this for production
+            resources=[bucket.bucket_arn, f"{bucket.bucket_arn}/*"],
+            principals=[iam.ServicePrincipal("redshift.amazonaws.com")]
+        )
+
+        # Attach the policy to the bucket
+        bucket.add_to_resource_policy(policy_statement)
+
+# Add this stack to your app.py or the main deployment script
+from aws_cdk import App
+from s3_redshift_access_stack import S3RedshiftAccessStack
+
+app = App()
+S3RedshiftAccessStack(app, "S3RedshiftAccessStack")
+app.synth()
