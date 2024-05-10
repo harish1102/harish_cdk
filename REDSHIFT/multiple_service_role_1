@@ -1,0 +1,30 @@
+from aws_cdk import (
+    aws_iam as iam,
+    Stack,
+    App
+)
+from constructs import Construct
+
+class MultiServiceRoleStack(Stack):
+    def __init__(self, scope: Construct, id: str, **kwargs):
+        super().__init__(scope, id, **kwargs)
+
+        # Define the role with multiple service principals
+        multi_service_role = iam.Role(self, "MultiServiceRole",
+            assumed_by=iam.CompositePrincipal(
+                iam.ServicePrincipal("ec2.amazonaws.com"),
+                iam.ServicePrincipal("lambda.amazonaws.com"),
+                iam.ServicePrincipal("sns.amazonaws.com")
+            ),
+            description="Role that can be assumed by multiple services"
+        )
+
+        # Example: Attach a managed policy
+        multi_service_role.add_managed_policy(
+            iam.ManagedPolicy.from_aws_managed_policy_name("AmazonS3ReadOnlyAccess")
+        )
+
+# Set up the app and stack
+app = App()
+MultiServiceRoleStack(app, "MultiServiceRoleStack")
+app.synth()
