@@ -1,0 +1,37 @@
+from aws_cdk import (
+    aws_s3 as s3,
+    Stack,
+    RemovalPolicy
+)
+from constructs import Construct
+
+class S3BucketStack(Stack):
+    def __init__(self, scope: Construct, id: str, bucket_name: str, **kwargs):
+        super().__init__(scope, id, **kwargs)
+
+        # Create an S3 bucket with the provided name
+        bucket = s3.Bucket(self, "MyS3Bucket",
+            bucket_name=bucket_name,
+            removal_policy=RemovalPolicy.DESTROY
+        )
+
+# Setup the app and stack
+from aws_cdk import App
+
+app = App()
+bucket_name = "my-unique-bucket-name-12345"  # Replace with your desired bucket name
+S3BucketStack(app, "S3BucketStack", bucket_name=bucket_name)
+app.synth()
+-------
+class S3BucketStack(Stack):
+    def __init__(self, scope: Construct, id: str, **kwargs):
+        super().__init__(scope, id, **kwargs)
+
+        bucket_name = "my-unique-bucket-name-12345"  # Define the bucket name here
+
+        # Create an S3 bucket
+        bucket = s3.Bucket(self, "MyS3Bucket",
+            bucket_name=bucket_name,
+            removal_policy=RemovalPolicy.DESTROY
+        )
+------
