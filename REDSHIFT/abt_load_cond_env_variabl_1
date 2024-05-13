@@ -1,0 +1,45 @@
+--settings.py
+
+import os
+
+def get_environment_variable(var_name, default_value):
+    """ Retrieves an environment variable or returns a default value if not set. """
+    return os.getenv(var_name, default_value)
+-------
+--s3_bucket_stack.py
+
+from aws_cdk import (
+    Stack,
+    aws_s3 as s3,
+    RemovalPolicy
+)
+from constructs import Construct
+from settings import get_environment_variable
+
+class S3BucketStack(Stack):
+    def __init__(self, scope: Construct, id: str, **kwargs):
+        super().__init__(scope, id, **kwargs)
+
+        # Load environment variables
+        bucket_name = get_environment_variable('BUCKET_NAME', 'default-bucket-name-123')
+
+        # Create an S3 bucket
+        bucket = s3.Bucket(self, "SampleS3Bucket",
+            bucket_name=bucket_name,
+            removal_policy=RemovalPolicy.DESTROY  # Set to DESTROY for easy cleanup; adjust as needed for production
+        )
+
+-----
+--app.py
+from aws_cdk import App
+from s3_bucket_stack import S3BucketStack
+
+app = App()
+S3BucketStack(app, "S3BucketStack", env={
+    'account': 'your-account-id',  # Specify your AWS account ID
+    'region': 'your-region'  # Specify your AWS region
+})
+app.synth()
+------
+
+
