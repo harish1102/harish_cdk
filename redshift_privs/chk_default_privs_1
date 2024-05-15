@@ -1,0 +1,20 @@
+SELECT nspname AS schema, defaclacl AS default_privileges
+FROM pg_namespace
+LEFT JOIN pg_default_acl
+ON (nspnamespace = oid)
+WHERE defaclacl IS NOT NULL;
+=======
+SELECT defaclacl AS default_privileges
+FROM pg_default_acl
+WHERE defaclobjtype = 'r' -- 'r' stands for relations which includes tables
+AND nspname = 'target_schema'; -- Replace 'target_schema' with your schema name
+=======
+ALTER DEFAULT PRIVILEGES IN SCHEMA target_schema
+FOR ROLE target_role -- This is the role that creates the objects
+REVOKE ALL ON TABLES FROM PUBLIC;
+ALTER DEFAULT PRIVILEGES IN SCHEMA target_schema
+FOR ROLE target_role
+GRANT SELECT ON TABLES TO specific_role;
+
+=====
+  
