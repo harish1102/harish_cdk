@@ -18,3 +18,21 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA target_schema
 GRANT SELECT ON TABLES TO your_user_or_role;
 
 COMMIT;
+-----
+-- Replace 'target_schema' with the name of your schema
+-- Replace 'your_user_or_role' with the user or role name
+
+BEGIN;
+SELECT 'GRANT SELECT ON ' || quote_ident(table_schema) || '.' || quote_ident(table_name) || ' TO your_user_or_role;'
+FROM information_schema.tables
+WHERE table_schema = 'target_schema';
+END;
+
+------
+
+-- Replace 'target_schema' with your schema
+-- Replace 'your_user_or_role' with your user or role
+
+ALTER DEFAULT PRIVILEGES IN SCHEMA target_schema
+GRANT SELECT ON TABLES TO your_user_or_role;
+--------
