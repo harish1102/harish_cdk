@@ -1,0 +1,39 @@
+
+To create a schema, users, groups, roles, and manage permissions in an Amazon Redshift database as specified, you need a series of SQL commands. These will define the required elements and set up the necessary access controls according to your requirements. Here’s how you can proceed:
+
+Step 1: Create Schema
+CREATE SCHEMA my_schema;
+
+CREATE USER user1 WITH PASSWORD '<password>';
+CREATE USER user2 WITH PASSWORD '<password>';
+CREATE USER user3 WITH PASSWORD '<password>';
+CREATE USER user4 WITH PASSWORD '<password>';
+
+-- Create groups
+CREATE GROUP group_select;
+CREATE GROUP group_all;
+
+-- Add users to groups
+ALTER GROUP group_select ADD USER user1;
+ALTER GROUP group_select ADD USER user2;
+ALTER GROUP group_all ADD USER user3;
+ALTER GROUP group_all ADD USER user4;
+
+
+-- Create roles
+CREATE ROLE role_select;
+CREATE ROLE role_all;
+
+-- Grant privileges to roles
+GRANT SELECT ON ALL TABLES IN SCHEMA my_schema TO role_select;
+GRANT ALL ON ALL TABLES IN SCHEMA my_schema TO role_all;
+
+-- To ensure future tables are also covered
+ALTER DEFAULT PRIVILEGES IN SCHEMA my_schema GRANT SELECT ON TABLES TO role_select;
+ALTER DEFAULT PRIVILEGES IN SCHEMA my_schema GRANT ALL ON TABLES TO role_all;
+
+
+-- Grant roles to groups
+GRANT role_select TO group_select;
+GRANT role_all TO group_all;
+
