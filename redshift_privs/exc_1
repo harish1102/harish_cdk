@@ -1,3 +1,5 @@
+
+=========
 -- Grant SELECT on existing tables
 BEGIN;
 
