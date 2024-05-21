@@ -1,0 +1,46 @@
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": [
+                "rds:CreateDBCluster",
+                "rds:CreateDBClusterParameterGroup",
+                "rds:CreateDBClusterSnapshot",
+                "rds:CreateDBInstance",
+                "rds:CreateDBParameterGroup",
+                "rds:CreateDBSecurityGroup",
+                "rds:CreateDBSnapshot",
+                "rds:CreateDBSubnetGroup",
+                "rds:DeleteDBCluster",
+                "rds:DeleteDBClusterParameterGroup",
+                "rds:DeleteDBClusterSnapshot",
+                "rds:DeleteDBInstance",
+                "rds:DeleteDBParameterGroup",
+                "rds:DeleteDBSecurityGroup",
+                "rds:DeleteDBSnapshot",
+                "rds:DeleteDBSubnetGroup",
+                "rds:DescribeDBClusters",
+                "rds:DescribeDBClusterParameterGroups",
+                "rds:DescribeDBClusterParameters",
+                "rds:DescribeDBClusterSnapshots",
+                "rds:DescribeDBInstances",
+                "rds:DescribeDBParameterGroups",
+                "rds:DescribeDBParameters",
+                "rds:DescribeDBSecurityGroups",
+                "rds:DescribeDBSnapshots",
+                "rds:DescribeDBSubnetGroups",
+                "rds:ModifyDBCluster",
+                "rds:ModifyDBClusterParameterGroup",
+                "rds:ModifyDBInstance",
+                "rds:ModifyDBParameterGroup",
+                "rds:ModifyDBSubnetGroup",
+                "rds:RestoreDBClusterFromSnapshot",
+                "rds:RestoreDBClusterToPointInTime",
+                "rds:StartDBCluster",
+                "rds:StopDBCluster"
+            ],
+            "Resource": "*"
+        }
+    ]
+}
