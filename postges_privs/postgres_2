@@ -35,3 +35,46 @@ class AuroraServerlessPostgresStack(core.Stack):
 app = core.App()
 AuroraServerlessPostgresStack(app, "AuroraServerlessPostgresStack")
 app.synth()
+
+========
+from aws_cdk import (
+    aws_rds as rds,
+    aws_ec2 as ec2,
+    aws_secretsmanager as secretsmanager,
+    Stack,
+)
+from constructs import Construct
+
+class MyServerlessAuroraStack(Stack):
+
+    def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
+        super().__init__(scope, construct_id, **kwargs)
+
+        # Create a VPC
+        vpc = ec2.Vpc(self, "MyVpc", max_azs=2)  # Adjust the max_azs as needed
+
+        # Create a Secrets Manager secret for the database credentials
+        db_credentials_secret = secretsmanager.Secret(self, "DBCredentialsSecret",
+            secret_name="aurora-serverless-credentials",
+            generate_secret_string=secretsmanager.SecretStringGenerator(
+                exclude_characters="\"@/\\", # Adjust exclusions as needed
+                include_space=False,
+                password_length=16,
+                secret_string_template='{"username":"admin"}',
+                generate_string_key="password"
+            )
+        )
+
+        # Create a serverless Aurora PostgreSQL database cluster
+        db_cluster = rds.ServerlessCluster(self, "AuroraPostgresServerless",
+            engine=rds.DatabaseClusterEngine.aurora_postgres(version=rds.AuroraPostgresEngineVersion.VER_13_4),
+            vpc=vpc,
+            credentials=rds.Credentials.from_secret(db_credentials_secret),
+            scaling=rds.ServerlessScalingOptions(
+                auto_pause=cdk.Duration.minutes(10), # Pause after 10 minutes of inactivity
+                min_capacity=rds.AuroraCapacityUnit.ACU_2,
+                max_capacity=rds.AuroraCapacityUnit.ACU_8
+            ),
+            default_database_name="MyDatabase"
+        )
+
