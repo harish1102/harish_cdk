@@ -1,0 +1,71 @@
+from aws_cdk import (
+    aws_rds as rds,
+    aws_ec2 as ec2,
+    aws_secretsmanager as secretsmanager,
+    Stack,
+    aws_iam as iam
+)
+from constructs import Construct
+
+class MyGlobalAuroraStack(Stack):
+
+    def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
+        super().__init__(scope, construct_id, **kwargs)
+
+        # Create a VPC
+        vpc = ec2.Vpc(self, "MyVpc", max_azs=2)  # Adjust the max_azs as needed
+
+        # Create a Secrets Manager secret for the database credentials
+        db_credentials_secret = secretsmanager.Secret(self, "DBCredentialsSecret",
+            secret_name="aurora-global-credentials",
+            generate_secret_string=secretsmanager.SecretStringGenerator(
+                exclude_characters="\"@/\\", # Adjust exclusions as needed
+                include_space=False,
+                password_length=16,
+                secret_string_template='{"username":"admin"}',
+                generate_string_key="password"
+            )
+        )
+
+        # Create the primary Aurora database cluster
+        primary_db_cluster = rds.DatabaseCluster(self, "PrimaryAuroraCluster",
+            engine=rds.DatabaseClusterEngine.aurora_postgres(version=rds.AuroraPostgresEngineVersion.VER_13_4),
+            instance_props=rds.InstanceProps(
+                vpc=vpc,
+                instance_type=ec2.InstanceType.of(
+                    ec2.InstanceClass.BURSTABLE3, ec2.InstanceSize.MEDIUM
+                )
+            ),
+            credentials=rds.Credentials.from_secret(db_credentials_secret),
+            default_database_name="PrimaryDB"
+        )
+
+        # Create the global database from the primary cluster
+        global_db = rds.CfnGlobalCluster(self, "GlobalAuroraCluster",
+            global_cluster_identifier="global-aurora-cluster",
+            source_db_cluster_identifier=primary_db_cluster.cluster_identifier,
+            engine="aurora-postgresql",
+            engine_version="13.4",
+            deletion_protection=False
+        )
+
+        # Role for the secondary cluster
+        secondary_cluster_role = iam.Role(self, "SecondaryClusterRole",
+            assumed_by=iam.ServicePrincipal("rds.amazonaws.com"),
+            managed_policies=[iam.ManagedPolicy.from_aws_managed_policy_name("service-role/AmazonRDSFullAccess")]
+        )
+
+        # Create the secondary Aurora database cluster in a different region
+        secondary_db_cluster = rds.CfnDBCluster(self, "SecondaryAuroraCluster",
+            engine="aurora-postgresql",
+            engine_version="13.4",
+            db_cluster_identifier="secondary-cluster",
+            global_cluster_identifier=global_db.ref,
+            db_cluster_parameter_group_name="default.aurora-postgresql13",
+            vpc_security_group_ids=[vpc.vpc_default_security_group],
+            availability_zones=vpc.availability_zones,
+            storage_encrypted=True,
+            master_username=primary_db_cluster.secret.secret_value_from_json("username").to_string(),
+            master_user_password=primary_db_cluster.secret.secret_value_from_json("password").to_string(),
+            db_subnet_group_name=primary_db_cluster.cluster_endpoint.subnet_group_name
+        )
