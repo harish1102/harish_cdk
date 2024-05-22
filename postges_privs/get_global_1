@@ -1,0 +1,56 @@
+from aws_cdk import (
+    aws_rds as rds,
+    Stack,
+)
+from constructs import Construct
+
+class MyGlobalDatabaseStack(Stack):
+
+    def __init__(self, scope: Construct, id: str, **kwargs) -> None:
+        super().__init__(scope, id, **kwargs)
+
+        # ARN of the existing global database
+        existing_global_db_arn = "arn:aws:rds:us-west-2:123456789012:global-cluster:global-database-id"
+
+        # Import the existing global database
+        global_db = rds.GlobalCluster.from_global_cluster_attributes(self, "ImportedGlobalDB",
+            global_cluster_arn=existing_global_db_arn
+        )
+
+        # You can now use the imported global_db object as needed
+        # For example, you could add a new instance or another cluster to this global database
+========from aws_cdk import (
+    Stack,
+    aws_rds as rds,
+)
+from constructs import Construct
+
+class MyStack(Stack):
+
+    def __init__(self, scope: Construct, id: str, **kwargs) -> None:
+        super().__init__(scope, id, **kwargs)
+
+        # The name or ARN of your existing global database
+        global_database_name = "your-global-database-name"
+
+        # Reference the existing global database
+        global_db = rds.CfnGlobalCluster.from_global_cluster_attributes(
+            self, "ExistingGlobalDatabase",
+            global_cluster_identifier=global_database_name
+        )
+
+        # Now you can use the `global_db` object in your CDK stack
+        # For example, you might want to create a new cluster attached to this global database
+        new_db_cluster = rds.CfnDBCluster(self, "NewDBCluster",
+            engine="aurora-postgresql",
+            engine_version="13.4",
+            db_cluster_identifier="new-cluster",
+            global_cluster_identifier=global_db.global_cluster_identifier,
+            master_username="admin",
+            master_user_password="YourSecurePassword",
+            db_subnet_group_name="your-db-subnet-group",
+            vpc_security_group_ids=["your-security-group-id"],
+            storage_encrypted=True
+        )
+
+
