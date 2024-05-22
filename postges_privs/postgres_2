@@ -1,0 +1,37 @@
+from aws_cdk import (
+    aws_rds as rds,
+    aws_ec2 as ec2,
+    core,
+)
+
+class AuroraServerlessPostgresStack(core.Stack):
+
+    def __init__(self, scope: core.Construct, id: str, **kwargs) -> None:
+        super().__init__(scope, id, **kwargs)
+
+        # Create a new VPC for the database
+        vpc = ec2.Vpc(
+            self, "AuroraVPC",
+            max_azs=2  # Default is all AZs in the region
+        )
+
+        # Create a new serverless Aurora PostgreSQL database cluster
+        cluster = rds.ServerlessCluster(
+            self, "AuroraServerlessCluster",
+            engine=rds.DatabaseClusterEngine.AURORA_POSTGRESQL,
+            vpc=vpc,
+            scaling=rds.ServerlessScalingOptions(
+                auto_pause=core.Duration.minutes(10),  # Auto pause after 10 minutes of inactivity
+                min_capacity=rds.AuroraCapacityUnit.ACU_2,  # Minimum capacity
+                max_capacity=rds.AuroraCapacityUnit.ACU_16  # Maximum capacity
+            ),
+            default_database_name="MyDatabase",
+            parameter_group=rds.ParameterGroup.from_parameter_group_name(
+                self, "ParameterGroup", parameter_group_name="default.aurora-postgresql15"
+            ),
+            enable_data_api=True  # Optional, if you need Data API
+        )
+
+app = core.App()
+AuroraServerlessPostgresStack(app, "AuroraServerlessPostgresStack")
+app.synth()
