@@ -1,0 +1,41 @@
+from aws_cdk import (
+    aws_rds as rds,
+    aws_ec2 as ec2,
+    aws_secretsmanager as secretsmanager,
+    Stack,
+)
+from constructs import Construct
+
+class AuroraStack(Stack):
+
+    def __init__(self, scope: Construct, id: str, **kwargs) -> None:
+        super().__init__(scope, id, **kwargs)
+
+        # Create a VPC
+        vpc = ec2.Vpc(self, "MyVpc", max_azs=2)
+
+        # Create a Secrets Manager secret for the database credentials
+        db_credentials_secret = secretsmanager.Secret(self, "DBCredentialsSecret",
+            secret_name="aurora-postgres-credentials",
+            generate_secret_string=secretsmanager.SecretStringGenerator(
+                exclude_characters="\"@/\\",
+                include_space=False,
+                password_length=16,
+                secret_string_template='{"username":"admin"}',
+                generate_string_key="password"
+            )
+        )
+
+        # Create the Aurora PostgreSQL database cluster
+        db_cluster = rds.DatabaseCluster(self, "AuroraPostgresCluster",
+            engine=rds.DatabaseClusterEngine.aurora_postgres(version=rds.AuroraPostgresEngineVersion.VER_13_4),
+            credentials=rds.Credentials.from_secret(db_credentials_secret),
+            default_database_name="MyDatabase",
+            instances=2,
+            instance_props=rds.InstanceProps(
+                vpc=vpc,
+                instance_type=ec2.InstanceType.of(
+                    ec2.InstanceClass.BURSTABLE3, ec2.InstanceSize.MEDIUM
+                )
+            )
+        )
