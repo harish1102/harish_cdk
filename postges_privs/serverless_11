@@ -1,0 +1,50 @@
+from aws_cdk import (
+    aws_rds as rds,
+    aws_ec2 as ec2,
+    aws_secretsmanager as secretsmanager,
+    Stack,
+    Duration,
+)
+from constructs import Construct
+
+class AuroraServerlessV2Stack(Stack):
+
+    def __init__(self, scope: Construct, id: str, **kwargs) -> None:
+        super().__init__(scope, id, **kwargs)
+
+        # Create a VPC
+        vpc = ec2.Vpc(self, "MyVpc", max_azs=2)
+
+        # Create a Secrets Manager secret for the database credentials
+        db_credentials_secret = secretsmanager.Secret(self, "DBCredentialsSecret",
+            secret_name="aurora-serverless-v2-credentials",
+            generate_secret_string=secretsmanager.SecretStringGenerator(
+                exclude_characters="\"@/\\",
+                include_space=False,
+                password_length=16,
+                secret_string_template='{"username":"admin"}',
+                generate_string_key="password"
+            )
+        )
+
+        # Create the Aurora Serverless v2 database cluster
+        db_cluster = rds.DatabaseCluster(self, "AuroraServerlessV2Cluster",
+            engine=rds.DatabaseClusterEngine.aurora_postgres(version=rds.AuroraPostgresEngineVersion.VER_13_4),
+            credentials=rds.Credentials.from_secret(db_credentials_secret),
+            default_database_name="MyDatabase",
+            instances=[
+                rds.ClusterInstance.serverless_v2("ServerlessInstance",
+                    scaling=rds.ServerlessV2ScalingConfiguration(
+                        min_capacity=rds.AuroraCapacityUnit.ACU_2,
+                        max_capacity=rds.AuroraCapacityUnit.ACU_32
+                    )
+                )
+            ],
+            vpc=vpc,
+            removal_policy=cdk.RemovalPolicy.DESTROY,  # Only for testing, not recommended for production
+            subnet_group=rds.SubnetGroup(self, "DBSubnetGroup",
+                description="Subnet group for Aurora Serverless V2",
+                vpc=vpc,
+                vpc_subnets=ec2.SubnetSelection(subnet_type=ec2.SubnetType.PRIVATE_WITH_NAT)
+            )
+        )
