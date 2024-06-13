@@ -1,0 +1,67 @@
+from constructs import Construct
+from aws_cdk import (
+    Stack,
+    aws_rds as rds,
+    aws_ec2 as ec2,
+    aws_secretsmanager as secretsmanager,
+    Environment,
+    App,
+)
+
+class AuroraGlobalDatabaseStack(Stack):
+    def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
+        super().__init__(scope, construct_id, **kwargs)
+
+        # Define the VPC
+        vpc = ec2.Vpc(self, "AuroraVPC", max_azs=2)  # Reduced AZs for simplicity
+
+        # Security group to allow PostgreSQL access
+        sg = ec2.SecurityGroup(self, "AuroraSecurityGroup", vpc=vpc)
+        sg.add_ingress_rule(ec2.Peer.any_ipv4(), ec2.Port.tcp(5432), "Allow PostgreSQL access")
+
+        # Primary Cluster Configuration
+        primary_cluster = rds.DatabaseCluster(self, "PrimaryCluster",
+            engine=rds.DatabaseClusterEngine.aurora_postgresql(
+                version=rds.AuroraPostgresqlEngineVersion.VER_13_4),
+            instance_props=rds.InstanceProps(
+                vpc=vpc,
+                vpc_subnets=ec2.SubnetSelection(subnet_type=ec2.SubnetType.PRIVATE),
+                security_group=sg,
+            ),
+            instances=1,
+            default_database_name="MainDB",
+        )
+
+        # CfnGlobalCluster for setting up a global database
+        global_cluster = rds.CfnGlobalCluster(self, "GlobalCluster",
+            source_db_cluster_identifier=primary_cluster.cluster_arn,
+            engine="aurora-postgresql",
+            engine_version="13.4",
+            global_cluster_identifier="my-global-cluster",
+            storage_encrypted=True
+        )
+
+        # Secondary Cluster Configuration (in us-east-2)
+        secondary_cluster = rds.DatabaseCluster(self, "SecondaryCluster",
+            engine=rds.DatabaseClusterEngine.aurora_postgresql(
+                version=rds.AuroraPostgresqlEngineVersion.VER_13_4),
+            instance_props=rds.InstanceProps(
+                vpc=vpc,
+                vpc_subnets=ec2.SubnetSelection(subnet_type=ec2.SubnetType.PRIVATE),
+                security_group=sg,
+            ),
+            instances=1,
+            default_database_name="SecondaryDB",
+            replication_source_identifier=global_cluster.ref
+        )
+
+        secondary_cluster.node.add_dependency(global_cluster)
+
+# Define environments for deployment
+env_us_east_1 = Environment(region="us-east-1")
+env_us_east_2 = Environment(region="us-east-2")
+
+app = App()
+AuroraGlobalDatabaseStack(app, "PrimaryAuroraCluster", env=env_us_east_1)
+AuroraGlobalDatabaseStack(app, "SecondaryAuroraCluster", env=env_us_east_2)
+app.synth()
