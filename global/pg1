@@ -1,0 +1,62 @@
+# Import CDK libraries
+from aws_cdk import (
+    aws_rds as rds,
+    aws_ec2 as ec2,
+    aws_secretsmanager as secretsmanager,
+    core as cdk
+)
+
+class GlobalAuroraPostgreSQLStack(cdk.Stack):
+    def __init__(self, scope: cdk.Construct, id: str, **kwargs) -> None:
+        super().__init__(scope, id, **kwargs)
+
+        # Define the VPC
+        vpc = ec2.Vpc(self, "AuroraVPC", max_azs=3)
+
+        # Create a security group for Aurora cluster
+        security_group = ec2.SecurityGroup(self, "AuroraSecurityGroup",
+                                           vpc=vpc,
+                                           description="Allow postgresql access",
+                                           allow_all_outbound=True)
+        security_group.add_ingress_rule(ec2.Peer.any_ipv4(), ec2.Port.tcp(5432), "Allow PostgreSQL access")
+
+        # Define the DB cluster parameter group
+        cluster_parameter_group = rds.ParameterGroup(self, "ClusterParamGroup",
+                                                     engine=rds.DatabaseClusterEngine.aurora_postgresql(),
+                                                     parameters={"rds.force_ssl": "1"})
+
+        # Primary cluster in us-east-1
+        primary_cluster = rds.DatabaseCluster(self, "PrimaryCluster",
+                                              engine=rds.DatabaseClusterEngine.aurora_postgresql(version=rds.AuroraPostgresqlEngineVersion.VER_13_4),
+                                              instances=1,
+                                              vpc=vpc,
+                                              vpc_subnets=ec2.SubnetSelection(subnet_type=ec2.SubnetType.PUBLIC),
+                                              security_groups=[security_group],
+                                              parameter_group=cluster_parameter_group,
+                                              default_database_name="MainDB")
+
+        # Secondary cluster in us-east-2
+        secondary_cluster = rds.DatabaseCluster(self, "SecondaryCluster",
+                                                engine=rds.DatabaseClusterEngine.aurora_postgresql(version=rds.AuroraPostgresqlEngineVersion.VER_13_4),
+                                                instances=1,
+                                                vpc=vpc,
+                                                vpc_subnets=ec2.SubnetSelection(subnet_type=ec2.SubnetType.PUBLIC),
+                                                security_groups=[security_group],
+                                                parameter_group=cluster_parameter_group,
+                                                default_database_name="SecondaryDB",
+                                                source_region="us-east-1")
+
+        # Enable global database
+        global_database = rds.CfnGlobalCluster(self, "MyGlobalCluster",
+                                                engine="aurora-postgresql",
+                                                engine_version="13.4",
+                                                storage_encrypted=True,
+                                                global_cluster_identifier="my-global-cluster",
+                                                source_db_cluster_identifier=primary_cluster.cluster_arn)
+
+        # Associate secondary cluster with global database
+        secondary_cluster.add_depends_on(global_database)
+
+app = cdk.App()
+GlobalAuroraPostgreSQLStack(app, "GlobalAuroraPostgreSQLStack", env=cdk.Environment(region="us-east-1"))
+app.synth()
