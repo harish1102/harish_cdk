@@ -1,0 +1,38 @@
+SELECT 'CREATE USER ' || rolname || ' WITH ' 
+    || ' ENCRYPTED PASSWORD ''' || rolpassword || ''' '
+    || ' LOGIN ' || CASE WHEN rolcanlogin THEN 'YES' ELSE 'NO' END 
+    || ' SUPERUSER ' || CASE WHEN rolsuper THEN 'YES' ELSE 'NO' END 
+    || ' CREATEDB ' || CASE WHEN rolcreatedb THEN 'YES' ELSE 'NO' END 
+    || ' CREATEROLE ' || CASE WHEN rolcreaterole THEN 'YES' ELSE 'NO' END 
+    || ' INHERIT ' || CASE WHEN rolinherit THEN 'YES' ELSE 'NO' END 
+    || ' REPLICATION ' || CASE WHEN rolreplication THEN 'YES' ELSE 'NO' END 
+    || ' CONNECTION LIMIT ' || rolconnlimit
+    || ' VALID UNTIL ''' || rolvaliduntil || ''';'
+FROM pg_authid
+WHERE rolcanlogin = true;
+------
+SELECT 'GRANT ' || string_agg(privilege_type, ',') || ' ON ' || table_name || ' TO ' || grantee || ';'
+FROM information_schema.role_table_grants
+WHERE grantee = 'specific_user'
+GROUP BY table_name, grantee;
+------
+SELECT 'CREATE USER ' || usename || ' WITH ' ||
+    'LOGIN ' ||
+    CASE WHEN usesuper THEN 'SUPERUSER ' ELSE '' END ||
+    CASE WHEN usecreatedb THEN 'CREATEDB ' ELSE '' END ||
+    'PASSWORD ''' || 'dummy_password' || ''' ' ||
+    'VALID UNTIL ''' || rolvaliduntil::text || ''';' as user_ddl
+FROM pg_user
+WHERE usename NOT IN ('postgres', 'rdsadmin');
+-----
+-- Check role memberships
+SELECT 'GRANT ' || rolname || ' TO ' || member || ';' 
+FROM pg_auth_members 
+JOIN pg_roles ON pg_roles.oid = roleid 
+JOIN pg_user ON pg_user.usesysid = member;
+
+-- Check grants on databases or schemas
+SELECT 'GRANT ' || privilege_type || ' ON DATABASE ' || datname || ' TO ' || grantee || ';'
+FROM information_schema.role_database_grants WHERE grantee = 'specific_user';
+---------
+
